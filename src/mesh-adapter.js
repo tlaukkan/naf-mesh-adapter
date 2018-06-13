@@ -18,24 +18,27 @@ class DataMessage {
 
 /**
  * Mesh Adapter
+ *
+ * Peer URLs structure is: '<signalingServerUrl>/<peerId>'
  */
 class MeshAdapter {
 
     constructor() {
         this.debugLog('--- mesh adapter constructor ---')
 
-        this.debugLogPrefix = null
+        // Email for connecting to signaling server
         this.email = Date.now().toString();
+        // Secret for connecting to signaling server
         this.secret = Date.now().toString();
+        // Debug log prefix. Disabled when null.
+        this.debugLogPrefix = null
 
-        //TODO Remove hack added for adapter testing
+        //TODO Remove hack added for adapter test page
         if (typeof (document) !== 'undefined') {
-            this.debugLogPrefix = document.title
             this.email = document.title
             this.secret = document.title
+            this.debugLogPrefix = document.title
         }
-
-        // Peer URLs structure is: '<signalingServerUrl>/<peerId>'
 
         // Initial peer URL or null if this is lone server node.
         this.selfPeerUrl = null
@@ -57,12 +60,6 @@ class MeshAdapter {
 
         this.debugLog('--- mesh adapter constructor ---')
 
-    }
-    
-    debugLog(message) {
-        if (this.debugLogPrefix) {
-            console.log(this.debugLogPrefix + ' ' + message)
-        }
     }
 
     // ### INTERFACE FUNCTIONS ###
@@ -266,29 +263,10 @@ class MeshAdapter {
         const connectionLabel = selfPeerUrl + ' -> ' + peer.peerUrl
         const connection = new RTCPeerConnection(self.configuration)
         self.connections.set(peer.peerUrl, connection)
+        const peerUrl = peer.peerUrl
         const channel = connection.createDataChannel(connectionLabel);
 
-        channel.onopen = () => {
-            self.channels.set(peer.peerUrl, channel)
-            self.openListener(peer.peerUrl);
-            self.peers.set(peer.peerUrl, true)
-            self.notifyOccupantsChanged()
-            self.debugLog("channel " + channel.label + " opened")
-        };
-        channel.onclose = () => {
-            self.closeStreamConnection(peer.peerUrl)
-            self.peers.set(peer.peerUrl, false)
-            self.notifyOccupantsChanged()
-            self.debugLog("channel " + channel.label + " closed")
-        };
-        channel.onmessage = (event) => {
-            self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peer.peerUrl)
-            const message = JSON.parse(event.data)
-            const from = peer.peerUrl;
-            const dataType = message.dataType;
-            const data = message.data;
-            self.messageListener(from, dataType, data);
-        };
+        this.setupChannel(channel, peerUrl);
 
         await self.signalingChannelOne.offer(peer.signalingServerUrl, peer.peerId, connection)
         this.debugLog('mesh adapter sent offer to ' + peer.peerUrl)
@@ -302,35 +280,46 @@ class MeshAdapter {
         this.debugLog('mesh adapter received offer from ' + peerUrl)
         connection.ondatachannel = (event) => {
             const channel = event.channel;
-            channel.onopen = () => {
-                self.channels.set(peerUrl, channel)
-                self.openListener(peerUrl);
-                self.peers.set(peerUrl, true)
-                self.notifyOccupantsChanged()
-                self.debugLog("channel " + channel.label + " opened")
-            };
-            channel.onclose = () => {
-                self.closeStreamConnection(peerUrl)
-                self.peers.set(peerUrl, false)
-                self.notifyOccupantsChanged()
-                self.debugLog("channel " + channel.label + " closed")
-            };
-            channel.onmessage = (event) => {
-                self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peerUrl)
-                const message = JSON.parse(event.data)
-                const from = peerUrl;
-                const dataType = message.dataType;
-                const data = message.data;
-                self.messageListener(from, dataType, data);
-            };
+            this.setupChannel(channel, peerUrl);
         };
         return connection
+    }
+
+    setupChannel(channel, peerUrl) {
+        const self = this
+        channel.onopen = () => {
+            self.channels.set(peerUrl, channel)
+            self.openListener(peerUrl);
+            self.peers.set(peerUrl, true)
+            self.notifyOccupantsChanged()
+            self.debugLog("channel " + channel.label + " opened")
+        };
+        channel.onclose = () => {
+            self.closeStreamConnection(peerUrl)
+            self.peers.set(peerUrl, false)
+            self.notifyOccupantsChanged()
+            self.debugLog("channel " + channel.label + " closed")
+        };
+        channel.onmessage = (event) => {
+            self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peerUrl)
+            const message = JSON.parse(event.data)
+            const from = peerUrl;
+            const dataType = message.dataType;
+            const data = message.data;
+            self.messageListener(from, dataType, data);
+        };
     }
 
     notifyOccupantsChanged() {
         this.roomOccupantListener(Array.from(this.peers).reduce((obj, [key, value]) => (
             Object.assign(obj, { [key]: value })
         ), {}))
+    }
+
+    debugLog(message) {
+        if (this.debugLogPrefix) {
+            console.log(this.debugLogPrefix + ' ' + message)
+        }
     }
 }
 
