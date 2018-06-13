@@ -1,9 +1,36 @@
-npm init
-npm i -D jest
-npm i -D webpack
-npm i -D webpack-cli
-node_modules/.bin/webpack -p --devtool source-map
+# Networked A-Frame Mesh Adapter
 
+This project aims to provide networked A-Frame peer to peer mesh adapter.
 
+# Testing
 
-https://github.com/webrtc/samples/blob/gh-pages/src/content/datachannel/basic/js/main.js
+## Karma
+
+---
+    npm test
+---
+
+## NAF Adapter Test
+
+Run NAF adapter-test in browser:
+
+---
+    npm run dist & npm start
+---
+
+Open browser at http://127.0.0.1:8081/adapter-test/
+
+# Publish package
+
+## First publish
+
+---
+    npm publish --access public
+---
+
+## Update
+
+---
+    npm version patch
+    npm publish
+---
