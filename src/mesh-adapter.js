@@ -26,6 +26,16 @@ class MeshAdapter {
     constructor() {
         this.debugLog('--- mesh adapter constructor ---')
 
+        // The default app. Not in use currently.
+        this.app = 'default'
+        // The default room. Not in use currently.
+        this.room = 'default';
+
+        // WebRTC configuration
+        this.configuration = {iceServers: [{urls: 'stun:stun1.l.google.com:19302'}]};
+        // The WebRTC options not in use currently.
+        this.options = null
+
         // Email for connecting to signaling server
         this.email = Date.now().toString();
         // Secret for connecting to signaling server
@@ -33,21 +43,14 @@ class MeshAdapter {
         // Debug log prefix. Disabled when null.
         this.debugLogPrefix = null
 
-        //TODO Remove hack added for adapter test page
-        if (typeof (document) !== 'undefined') {
-            this.email = document.title
-            this.secret = document.title
-            this.debugLogPrefix = document.title
-        }
-
-        // Initial peer URL or null if this is lone server node.
-        this.selfPeerUrl = null
-        this.initialPeerUrl = null
-        this.configuration = {iceServers: [{urls: 'stun:stun1.l.google.com:19302'}]};
+        // Primary signaling server URL for this client
         this.signalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com'
+        // Client own peer URL formed from primary signaling server URL and self peer ID.
+        this.selfPeerUrl = null
+        // First remote peer URL or null if this is first node in mesh. Change to array?
+        this.serverPeerUrl = null
 
-        this.room = "default";
-
+        // The signaling channel used for WebRTC signaling.
         this.signalingChannelOne = new SignalingChannel()
         // Map of signaling server URLs and peer IDs
         this.selfPeerIds = new Map()
@@ -58,17 +61,23 @@ class MeshAdapter {
         // Map of peer URLs and true or false indicating connection status
         this.peers = new Map()
 
-        this.debugLog('--- mesh adapter constructor ---')
+        //TODO Remove hack added for adapter test page
+        if (typeof (document) !== 'undefined') {
+            this.email = document.title
+            this.secret = document.title
+            this.debugLogPrefix = document.title
+        }
 
+        this.debugLog('--- mesh adapter constructor ---')
     }
 
     // ### INTERFACE FUNCTIONS ###
 
     setServerUrl(initialPeerUrl) {
         this.debugLog('--- mesh adapter set server url ---')
-        this.debugLog('set server URL to first peer URL to: ' + initialPeerUrl)
+        this.debugLog('set server URL to initial peer URL: ' + initialPeerUrl)
         if (initialPeerUrl) {
-            this.initialPeerUrl = initialPeerUrl;
+            this.serverPeerUrl = initialPeerUrl;
         }
         this.debugLog('--- mesh adapter set server url ---')
     }
@@ -87,6 +96,7 @@ class MeshAdapter {
 
     setWebRtcOptions(options) {
         this.debugLog('--- mesh adapter set web rtc options ---')
+        this.options = options
         this.debugLog('--- mesh adapter set web rtc options ---')
     }
 
@@ -118,8 +128,8 @@ class MeshAdapter {
 
         this.signalingChannelOne.addServer(this.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
             self.selfPeerUrl = signalServerUrl + '/' + selfPeerId
-            if (self.initialPeerUrl && self.initialPeerUrl.length > 3) {
-                await self.offer(new Peer(self.initialPeerUrl), selfPeerId);
+            if (self.serverPeerUrl && self.serverPeerUrl.length > 3) {
+                await self.offer(new Peer(self.serverPeerUrl), selfPeerId);
                 self.connectSuccess(self.selfPeerUrl);
             } else {
                 this.debugLog('mesh adapter did not send offer as initialPeerUrl was not set via setServerUrl function.')
