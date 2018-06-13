@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: './index.js',
@@ -20,6 +21,10 @@ module.exports = {
         }]
 
     },
-    plugins: [],
+    plugins: [
+        new CopyWebpackPlugin([
+            { from: 'static' }
+        ])
+    ],
     mode: "production"
 };

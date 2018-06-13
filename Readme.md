@@ -15,7 +15,7 @@ This project aims to provide networked A-Frame peer to peer mesh adapter.
 Run NAF adapter-test in browser:
 
 ---
-    npm run dist & npm start
+    npm run start:dev
 ---
 
 Open browser at http://127.0.0.1:8081/adapter-test/
