@@ -52,6 +52,8 @@ class MeshAdapter {
         this.connections = new Map()
         // Map of peer URL and RTC Data Channels
         this.channels = new Map()
+        // Map of peer URLs and true or false indicating connection status
+        this.peers = new Map()
 
         this.debugLog('--- mesh adapter constructor ---')
 
@@ -268,16 +270,19 @@ class MeshAdapter {
 
         channel.onopen = () => {
             self.channels.set(peer.peerUrl, channel)
-            this.openListener(peer.peerUrl);
-            self.notifyReceivedOccupants([peer.peerUrl])
-            this.debugLog("channel " + channel.label + " opened")
+            self.openListener(peer.peerUrl);
+            self.peers.set(peer.peerUrl, true)
+            self.notifyOccupantsChanged()
+            self.debugLog("channel " + channel.label + " opened")
         };
         channel.onclose = () => {
-            this.closeStreamConnection(peer.peerUrl)
-            this.debugLog("channel " + channel.label + " closed")
+            self.closeStreamConnection(peer.peerUrl)
+            self.peers.set(peer.peerUrl, false)
+            self.notifyOccupantsChanged()
+            self.debugLog("channel " + channel.label + " closed")
         };
         channel.onmessage = (event) => {
-            this.debugLog("channel " + channel.label + " received message " + event.data + " from " + peer.peerUrl)
+            self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peer.peerUrl)
             const message = JSON.parse(event.data)
             const from = peer.peerUrl;
             const dataType = message.dataType;
@@ -299,16 +304,19 @@ class MeshAdapter {
             const channel = event.channel;
             channel.onopen = () => {
                 self.channels.set(peerUrl, channel)
-                this.openListener(peerUrl);
-                self.notifyReceivedOccupants([peerUrl])
-                this.debugLog("channel " + channel.label + " opened")
+                self.openListener(peerUrl);
+                self.peers.set(peerUrl, true)
+                self.notifyOccupantsChanged()
+                self.debugLog("channel " + channel.label + " opened")
             };
             channel.onclose = () => {
-                this.closeStreamConnection(peerUrl)
-                this.debugLog("channel " + channel.label + " closed")
+                self.closeStreamConnection(peerUrl)
+                self.peers.set(peerUrl, false)
+                self.notifyOccupantsChanged()
+                self.debugLog("channel " + channel.label + " closed")
             };
             channel.onmessage = (event) => {
-                this.debugLog("channel " + channel.label + " received message " + event.data + " from " + peerUrl)
+                self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peerUrl)
                 const message = JSON.parse(event.data)
                 const from = peerUrl;
                 const dataType = message.dataType;
@@ -319,14 +327,11 @@ class MeshAdapter {
         return connection
     }
 
-    notifyReceivedOccupants(occupants) {
-        const occupantMap = {};
-        for (let i = 0; i < occupants.length; i++) {
-            occupantMap[occupants[i]] = true;
-        }
-        this.roomOccupantListener(occupantMap);
+    notifyOccupantsChanged() {
+        this.roomOccupantListener(Array.from(this.peers).reduce((obj, [key, value]) => (
+            Object.assign(obj, { [key]: value })
+        ), {}))
     }
-
 }
 
 
