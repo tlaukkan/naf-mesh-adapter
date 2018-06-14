@@ -188,16 +188,16 @@ class MeshAdapter {
             const channel = this.channels.get(clientId)
             channel.close()
             this.channels.delete(channel)
-            this.debugLog('mesh adapter removed channel' + clientId)
+            this.debugLog('mesh adapter removed channel ' + clientId)
+            this.closedListener(clientId);
         }
         if (this.connections.has(clientId)) {
             const connection = this.connections.get(clientId)
             this.signalingChannelOne.removeConnection(connection)
             connection.close()
             this.connections.delete(clientId)
-            this.debugLog('mesh adapter removed connection' + clientId)
+            this.debugLog('mesh adapter removed connection ' + clientId)
         }
-        this.closedListener(clientId);
         this.debugLog('--- mesh adapter close stream connection ---')
     }
 
@@ -305,10 +305,12 @@ class MeshAdapter {
             self.debugLog("channel " + channel.label + " opened")
         };
         channel.onclose = () => {
-            self.closeStreamConnection(peerUrl)
-            self.peers.set(peerUrl, false)
-            self.notifyOccupantsChanged()
-            self.debugLog("channel " + channel.label + " closed")
+            if (self.channels.has(peerUrl)) {
+                self.closeStreamConnection(peerUrl)
+                self.peers.set(peerUrl, false)
+                self.notifyOccupantsChanged()
+                self.debugLog("channel " + channel.label + " closed")
+            }
         };
         channel.onmessage = (event) => {
             self.debugLog("channel " + channel.label + " received message " + event.data + " from " + peerUrl)

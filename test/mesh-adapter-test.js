@@ -6,7 +6,7 @@ describe('mesh-adapter', function() {
     it('should connect and transmit message', function(done) {
         this.timeout(5000);
         const adapter1 = new MeshAdapter();
-        adapter1.debugLogPrefix = 'adapter 1 > '
+        //adapter1.debugLogPrefix = 'adapter 1 > '
         adapter1.email = 'adapter1'
         adapter1.secret = 'adapter1'
 
@@ -27,12 +27,11 @@ describe('mesh-adapter', function() {
             }, (id, dataType, data) => {
                 console.log('adapter 1 data channel message from: ' + id + ' ' + dataType + ' ' +data)
                 adapter1.closeStreamConnection(id)
-                done()
             }
         )
 
         const adapter2 = new MeshAdapter();
-        adapter2.debugLogPrefix = 'adapter 2 > '
+        //adapter2.debugLogPrefix = 'adapter 2 > '
         adapter2.email = 'adapter2'
         adapter2.secret = 'adapter2'
 

@@ -120,13 +120,15 @@ exports.SignalingChannel = class {
 
                     if (objectType === self.ObjectType.ICE_CANDIDATE) {
                         if (object) {
-                            const connection = self.connections.get(url + '/' + client.id + "-" + sourceId)
-                            connection.addIceCandidate(object)
+                            if (self.connections.has(url + '/' + client.id + "-" + sourceId)) {
+                                const connection = self.connections.get(url + '/' + client.id + "-" + sourceId)
+                                connection.addIceCandidate(object)
+                            }
                         }
                     }
                 } catch(error) {
                     console.log("rtc peer error processing received object " + objectType + " " + JSON.stringify(object) + ":" + error.message)
-                    throw new Error("rtc peer error processing received object " + objectType + " " + JSON.stringify(object) + ":" + error.messag)
+                    throw new Error("rtc peer error processing received object " + objectType + " " + JSON.stringify(object) + ":" + error.message)
                 }
 
             }
