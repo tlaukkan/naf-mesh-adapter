@@ -55,10 +55,10 @@ class MeshAdapter {
         // Client own peer URL formed from primary signaling server URL and self peer ID.
         this.selfPeerUrl = null
         // First remote peer URL or null if this is first node in mesh. Change to array?
-        this.serverPeerUrl = null
+        this.serverPeerUrls = null
 
         // The signaling channel used for WebRTC signaling.
-        this.signalingChannelOne = new SignalingChannel()
+        this.signalingChannel = new SignalingChannel()
         // Map of own signaling server URLs and peer IDs
         this.selfSignalingServerUrlPeerIdMap = new Map()
         // Map of own peer URLs and peer objects
@@ -82,11 +82,19 @@ class MeshAdapter {
 
     // ### INTERFACE FUNCTIONS ###
 
-    setServerUrl(initialPeerUrl) {
+    setSignalServerUrl(signalServerUrl) {
+        this.signalingServerUrl = signalServerUrl
+    }
+
+    setServerPeerUrls(serverPeerUrls) {
+        this.serverPeerUrls = serverPeerUrls
+    }
+
+    setServerUrl(serverPeerUrl) {
         this.debugLog('--- mesh adapter set server url ---')
-        this.debugLog('set server URL to initial peer URL: ' + initialPeerUrl)
-        if (initialPeerUrl) {
-            this.serverPeerUrl = initialPeerUrl;
+        this.debugLog('set server URL to server peer URL: ' + serverPeerUrl)
+        if (serverPeerUrl) {
+            this.serverPeerUrls = serverPeerUrl;
         }
         this.debugLog('--- mesh adapter set server url ---')
     }
@@ -135,15 +143,17 @@ class MeshAdapter {
 
         this.debugLog('--- mesh adapter connect ---')
 
-        this.signalingChannelOne.addServer(this.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
+        this.signalingChannel.addServer(this.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
             self.selfPeerUrl = signalServerUrl + '/' + selfPeerId
-            if (self.serverPeerUrl && self.serverPeerUrl.length > 3) {
-                await self.offer(new Peer(self.serverPeerUrl), selfPeerId);
+            if (self.serverPeerUrls && self.serverPeerUrls.length > 3) {
+                self.serverPeerUrls.split(',').forEach(async serverPeerUrl => {
+                    await self.offer(new Peer(serverPeerUrl), selfPeerId);
+                })
                 if (self.connectSuccess) {
                     self.connectSuccess(self.selfPeerUrl);
                 }
             } else {
-                this.debugLog('mesh adapter did not send offer as initialPeerUrl was not set via setServerUrl function.')
+                console.log('mesh adapter did not send offer as serverPeerUrl was not set via setServerUrl function.')
                 if (self.connectSuccess) {
                     self.connectSuccess(self.selfPeerUrl);
                 }
@@ -152,18 +162,18 @@ class MeshAdapter {
             self.connectFailure();
         })
 
-        this.signalingChannelOne.onServerConnected = (signalingServerUrl, selfPeerId) => {
+        this.signalingChannel.onServerConnected = (signalingServerUrl, selfPeerId) => {
             const selfPeerUrl = signalingServerUrl + '/' + selfPeerId
             self.selfSignalingServerUrlPeerIdMap.set(signalingServerUrl, selfPeerId)
             self.selfPeers.set(selfPeerUrl, new Peer(selfPeerUrl))
             self.debugLog('mesh adapter connected to signaling server ' + selfPeerUrl)
         }
 
-        this.signalingChannelOne.onOffer = (signalingServerUrl, peerId, offer) => {
+        this.signalingChannel.onOffer = (signalingServerUrl, peerId, offer) => {
             return self.acceptOffer(signalingServerUrl, peerId, offer);
         }
 
-        this.signalingChannelOne.onServerDisconnect = (signalingServerUrl) => {
+        this.signalingChannel.onServerDisconnect = (signalingServerUrl) => {
             if (self.selfSignalingServerUrlPeerIdMap.has(signalingServerUrl)) {
                 const selfPeerId = self.selfSignalingServerUrlPeerIdMap.get(signalingServerUrl)
                 const selfPeerUrl = signalingServerUrl + '/' + selfPeerId
@@ -181,7 +191,7 @@ class MeshAdapter {
         this.channels.forEach((channel, peerUrl) => {
             self.closeStreamConnection(peerUrl)
         })
-        this.signalingChannelOne.close()
+        this.signalingChannel.close()
     }
 
     shouldStartConnectionTo(clientId) {
@@ -200,7 +210,7 @@ class MeshAdapter {
             const selfPeerUrl = peer.signalingServerUrl + '/' + selfPeerId
             self.sendOffer(peer, selfPeerUrl).then();
         } else {
-            self.signalingChannelOne.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
+            self.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
                 self.sendOffer(peer, signalServerUrl + '/' + selfPeerId).then();
             })
         }
@@ -221,7 +231,7 @@ class MeshAdapter {
         if (this.connections.has(clientId)) {
             const connection = this.connections.get(clientId)
             this.connections.delete(clientId)
-            this.signalingChannelOne.removeConnection(connection)
+            this.signalingChannel.removeConnection(connection)
             connection.close()
             this.debugLog('mesh adapter removed connection ' + clientId)
         }
@@ -274,10 +284,10 @@ class MeshAdapter {
         const self = this
         const selfPeerUrl = self.signalingServerUrl + '/' + selfPeerId
 
-        if (self.signalingChannelOne.clients.has(peer.signalingServerUrl)) {
+        if (self.signalingChannel.clients.has(peer.signalingServerUrl)) {
             await this.delayedSendOffer(peer, selfPeerUrl);
         } else {
-            self.signalingChannelOne.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
+            self.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
                 await this.delayedSendOffer(peer, selfPeerUrl);
             })
         }
@@ -305,7 +315,7 @@ class MeshAdapter {
 
         this.setupChannel(channel, peerUrl);
 
-        await self.signalingChannelOne.offer(peer.signalingServerUrl, peer.peerId, connection)
+        await self.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection)
         this.debugLog('mesh adapter sent offer to ' + peer.peerUrl)
     }
 

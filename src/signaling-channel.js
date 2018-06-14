@@ -11,6 +11,7 @@ exports.SignalingChannel = class {
             ICE_CANDIDATE: 'ICE_CANDIDATE'
         };
 
+        this.autoReconnect = true
         // Map of server URLs and SignalingClients
         this.clients = new Map()
         // Map of server URLs and onServerConnectedCallbacks
@@ -37,7 +38,8 @@ exports.SignalingChannel = class {
 
         // Closes the signaling channel.
         this.close = () => {
-            this.clients.forEach(value => {
+            self.autoReconnect = false
+            self.clients.forEach(value => {
               value.disconnect()
             })
         }
@@ -45,7 +47,7 @@ exports.SignalingChannel = class {
         this.removeConnection = (connection) => {
             this.connections.forEach((value, key) => {
                 if (value === connection) {
-                    this.connections.delete(key)
+                    self.connections.delete(key)
                 }
             })
         }
@@ -136,9 +138,13 @@ exports.SignalingChannel = class {
             client.onDisconnect = () => {
                 self.onServerDisconnect(url)
                 // Reconnect after 10 seconds.
-                setTimeout(() => {
-                    client.connect()
-                }, 10000)
+                //console.log('signaling client disconnected: ' + url)
+                if (self.autoReconnect) {
+                    setTimeout(() => {
+                        console.log('signaling client attempting to reconnect')
+                        client.connect()
+                    }, 3000)
+                }
             }
 
             client.onConnectionError = () => {
