@@ -193,8 +193,8 @@ class MeshAdapter {
         }
         if (this.connections.has(clientId)) {
             const connection = this.connections.get(clientId)
-            this.signalingChannelOne.removeConnection(connection)
             this.connections.delete(clientId)
+            this.signalingChannelOne.removeConnection(connection)
             connection.close()
             this.debugLog('mesh adapter removed connection ' + clientId)
         }
