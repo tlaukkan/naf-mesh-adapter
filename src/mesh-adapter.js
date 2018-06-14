@@ -372,7 +372,7 @@ class MeshAdapter {
 
     processReceivedPeer(peerUrl) {
         const self = this
-        console.log('received peer: ' + peerUrl)
+        self.debugLog('received peer: ' + peerUrl)
         if (peerUrl !== self.selfPeerUrl) {
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.debugLog('setting up peer: ' + peerUrl)
@@ -385,6 +385,7 @@ class MeshAdapter {
 
     broadcastPeer(peerUrl) {
         const self = this
+        self.debugLog('broadcasting peer : ' + peerUrl)
         self.peers.forEach((connected, connectedPeerUrl) => {
             if (connected && peerUrl !== connectedPeerUrl) {
                 self.debugLog('sent peer: ' + peerUrl + ' to ' + connectedPeerUrl)
@@ -395,7 +396,7 @@ class MeshAdapter {
 
     sendConnectedPeers(peerUrl) {
         const self = this
-        console.log('sending connected peers to: ' + peerUrl)
+        self.debugLog('sending connected peers to: ' + peerUrl)
         self.peers.forEach((connected, connectedPeerUrl) => {
             if (connected && peerUrl !== connectedPeerUrl) {
                 self.debugLog('sent peer: ' + connectedPeerUrl + ' to ' + peerUrl)
