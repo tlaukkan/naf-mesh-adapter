@@ -153,7 +153,7 @@ class MeshAdapter {
                     self.connectSuccess(self.selfPeerUrl);
                 }
             } else {
-                console.log('mesh adapter did not send offer as serverPeerUrl was not set via setServerUrl function.')
+                //console.log('mesh adapter did not send offer as serverPeerUrl was not set via setServerUrl function.')
                 if (self.connectSuccess) {
                     self.connectSuccess(self.selfPeerUrl);
                 }
@@ -310,6 +310,12 @@ class MeshAdapter {
         const connectionLabel = selfPeerUrl + ' -> ' + peer.peerUrl
         const connection = new self.RTCPeerConnection(self.configuration)
         self.connections.set(peer.peerUrl, connection)
+        connection.oniceconnectionstatechange = function() {
+            if(connection.iceConnectionState == 'disconnected') {
+                self.closeStreamConnection(peer.peerUrl)
+            }
+        }
+
         const peerUrl = peer.peerUrl
         const channel = connection.createDataChannel(connectionLabel);
 
@@ -324,6 +330,12 @@ class MeshAdapter {
         const peerUrl = signalinServerUrl + '/' + peerId
         const connection = new self.RTCPeerConnection(self.configuration)
         self.connections.set(peerUrl, connection)
+        connection.oniceconnectionstatechange = function() {
+            if(connection.iceConnectionState == 'disconnected') {
+                self.closeStreamConnection(peerUrl)
+            }
+        }
+
         this.debugLog('mesh adapter received offer from ' + peerUrl)
         connection.ondatachannel = (event) => {
             const channel = event.channel;

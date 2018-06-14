@@ -29,6 +29,7 @@ describe('mesh-adapter', function() {
         )
 
         const adapter2 = new MeshAdapter();
+
         adapter2.email = 'adapter2'
         adapter2.secret = 'adapter2'
 
