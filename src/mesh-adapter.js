@@ -186,16 +186,16 @@ class MeshAdapter {
         this.debugLog('--- mesh adapter close stream connection ---')
         if (this.channels.has(clientId)) {
             const channel = this.channels.get(clientId)
+            this.channels.delete(clientId)
             channel.close()
-            this.channels.delete(channel)
             this.debugLog('mesh adapter removed channel ' + clientId)
             this.closedListener(clientId);
         }
         if (this.connections.has(clientId)) {
             const connection = this.connections.get(clientId)
             this.signalingChannelOne.removeConnection(connection)
-            connection.close()
             this.connections.delete(clientId)
+            connection.close()
             this.debugLog('mesh adapter removed connection ' + clientId)
         }
         this.debugLog('--- mesh adapter close stream connection ---')
