@@ -23,7 +23,12 @@ class DataMessage {
  */
 class MeshAdapter {
 
-    constructor() {
+    constructor(PeerConnection) {
+        if (PeerConnection) {
+            this.RTCPeerConnection = PeerConnection
+        } else {
+            this.RTCPeerConnection = RTCPeerConnection
+        }
         this.debugLog('--- mesh adapter constructor ---')
 
         // The default app. Not in use currently.
@@ -152,7 +157,7 @@ class MeshAdapter {
     }
 
     disconnect() {
-        self = this
+        const self = this
         this.channels.forEach((channel, peerUrl) => {
             self.closeStreamConnection(peerUrl)
         })
@@ -173,10 +178,10 @@ class MeshAdapter {
         if (self.selfPeerIds.has(peer.signalingServerUrl)) {
             const selfPeerId = self.selfPeerIds.get(peer.signalingServerUrl)
             const selfPeerUrl = peer.signalingServerUrl + '/' + selfPeerId
-            self.sendOffer(peer, selfPeerUrl);
+            self.sendOffer(peer, selfPeerUrl).then();
         } else {
             self.signalingChannelOne.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
-                self.sendOffer(peer, signalServerUrl + '/' + selfPeerId);
+                self.sendOffer(peer, signalServerUrl + '/' + selfPeerId).then();
             })
         }
         this.debugLog('--- mesh adapter start stream connection ---')
@@ -271,7 +276,7 @@ class MeshAdapter {
     async sendOffer(peer, selfPeerUrl) {
         const self = this
         const connectionLabel = selfPeerUrl + ' -> ' + peer.peerUrl
-        const connection = new RTCPeerConnection(self.configuration)
+        const connection = new self.RTCPeerConnection(self.configuration)
         self.connections.set(peer.peerUrl, connection)
         const peerUrl = peer.peerUrl
         const channel = connection.createDataChannel(connectionLabel);
@@ -285,7 +290,7 @@ class MeshAdapter {
     acceptOffer(signalinServerUrl, peerId, offer) {
         const self = this
         const peerUrl = signalinServerUrl + '/' + peerId
-        const connection = new RTCPeerConnection(self.configuration)
+        const connection = new self.RTCPeerConnection(self.configuration)
         self.connections.set(peerUrl, connection)
         this.debugLog('mesh adapter received offer from ' + peerUrl)
         connection.ondatachannel = (event) => {
@@ -335,6 +340,7 @@ class MeshAdapter {
     }
 }
 
+exports.MeshAdapter = MeshAdapter;
 
 if (typeof (NAF) !== 'undefined') {
     NAF.adapters.register("mesh", MeshAdapter);
