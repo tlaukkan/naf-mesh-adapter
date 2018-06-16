@@ -223,8 +223,10 @@ class MeshAdapter {
 
     closeStreamConnection(clientId) {
         this.debugLog('--- mesh adapter close stream connection ---')
-        if (this.channels.has(clientId)) {
-            const channel = this.channels.get(clientId)
+        const channel = this.channels.get(clientId)
+        const connection = this.connections.get(clientId)
+
+        if (channel) {
             this.channels.delete(clientId)
             channel.close()
             this.debugLog('mesh adapter removed channel ' + clientId)
@@ -232,17 +234,19 @@ class MeshAdapter {
                 this.closedListener(clientId);
             }
         }
-        if (this.connections.has(clientId)) {
-            const connection = this.connections.get(clientId)
+
+        if (connection) {
             this.connections.delete(clientId)
             this.signalingChannel.removeConnection(connection)
             connection.close()
             this.debugLog('mesh adapter removed connection ' + clientId)
         }
+
         if (this.peers.has(clientId) && this.peers.get(clientId)) {
             this.peers.set(clientId, false)
             this.notifyOccupantsChanged()
         }
+
         this.debugLog('--- mesh adapter close stream connection ---')
     }
 
@@ -408,7 +412,7 @@ class MeshAdapter {
                 self.debugLog('setting up peer: ' + peerUrl)
                 self.broadcastPeer(peerUrl)
                 self.sendConnectedPeers(peerUrl)
-                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl)
+                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl).then().catch()
             }
         }
     }

@@ -54,7 +54,8 @@
     "webpack-dev-server": "^3.1.4"
   },
   "dependencies": {
-    "@tlaukkan/webrtc-signaling": "0.0.14",
+    "@tlaukkan/webrtc-signaling": "0.0.16",
+    "websocket": "^1.0.26",
     "wrtc": "^0.1.4"
   }
 }

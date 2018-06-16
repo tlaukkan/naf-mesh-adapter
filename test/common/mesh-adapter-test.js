@@ -2,11 +2,8 @@
 const assert = require('assert');
 const uuidv4 = require('uuid/v4');
 
-const WrtcRtcPeerConnection = require('wrtc').RTCPeerConnection;
-const W3CWebSocket = require('websocket').w3cwebsocket;
-
-const WebSocketImplementation = (typeof (WebSocket) !== 'undefined') ? WebSocket : W3CWebSocket
-const RTCPeerConnectionImplementation = (typeof (RTCPeerConnection) !== 'undefined') ? RTCPeerConnection : WrtcRtcPeerConnection
+const WebSocketImplementation = (typeof (WebSocket) !== 'undefined') ? WebSocket : require('websocket').w3cwebsocket
+const RTCPeerConnectionImplementation = (typeof (RTCPeerConnection) !== 'undefined') ? RTCPeerConnection : require('wrtc').RTCPeerConnection
 
 const MeshAdapter = require('../../src/mesh-adapter').MeshAdapter;
 
