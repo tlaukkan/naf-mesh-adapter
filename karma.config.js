@@ -1,9 +1,13 @@
 module.exports = function (config) {
     config.set({
-        frameworks: ['mocha', 'chai', 'browserify'],
+        frameworks: ['mocha', 'browserify'],
         files: [
             'src/**/*.js',
-            'test/**/*.js'
+            'test/browser/**/*.js'
+        ],
+        exclude: [
+            'src/app.js',
+            'src/index.js'
         ],
         preprocessors: {
             './src/**/*.js': ['browserify'],
@@ -25,7 +29,7 @@ module.exports = function (config) {
         port: 9876,  // karma web server port
         colors: true,
         logLevel: config.LOG_INFO,
-        browsers: ['Firefox'],
+        browsers: ['FirefoxHeadless'],
         autoWatch: false,
         singleRun: true,
         concurrency: Infinity,

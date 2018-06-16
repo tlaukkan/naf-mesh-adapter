@@ -1,10 +1,13 @@
-const MeshAdapter = require('../src/mesh-adapter').MeshAdapter;
+const MeshAdapter = require('../../src/mesh-adapter').MeshAdapter;
+const webrtc = require('wrtc');
+const W3CWebSocket = require('websocket').w3cwebsocket;
+// eslint-disable-next-line no-unused-vars
 const assert = require('assert');
 
 describe('mesh-adapter', function() {
     it('should connect and transmit message', function(done) {
         this.timeout(5000);
-        const adapter1 = new MeshAdapter();
+        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
         adapter1.email = 'adapter1'
         adapter1.secret = 'adapter1'
 
@@ -28,8 +31,7 @@ describe('mesh-adapter', function() {
             }
         )
 
-        const adapter2 = new MeshAdapter();
-
+        const adapter2 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
         adapter2.email = 'adapter2'
         adapter2.secret = 'adapter2'
 
@@ -38,7 +40,7 @@ describe('mesh-adapter', function() {
         adapter2.setServerConnectListeners((id) => {
             console.log('adapter 2 connected to server and got id: ' + id)
 
-            adapter1.setServerUrl(id)
+            adapter1.setServerPeerUrls(id)
             adapter1.connect()
 
         }, () => {
@@ -66,14 +68,14 @@ describe('mesh-adapter', function() {
 
     it('should connect broadcast', function(done) {
         this.timeout(5000);
-        const adapter1 = new MeshAdapter();
+        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
         adapter1.email = 'adapter1'
         adapter1.secret = 'adapter1'
         adapter1.setRoomOccupantListener((occupantMap) => {
             console.log('adapter 1 occupant change')
         })
 
-        const adapter2 = new MeshAdapter();
+        const adapter2 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
         adapter2.email = 'adapter2'
         adapter2.secret = 'adapter2'
 
@@ -93,7 +95,7 @@ describe('mesh-adapter', function() {
             console.log('adapter 2 occupant change')
         })
 
-        const adapter3 = new MeshAdapter();
+        const adapter3 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
         adapter3.email = 'adapter3'
         adapter3.secret = 'adapter3'
 
@@ -122,4 +124,69 @@ describe('mesh-adapter', function() {
         })
     })
 
+    /*
+    it('should connect to local server peer and transmit message', function(done) {
+        this.timeout(5000);
+        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection);
+        adapter1.email = 'adapter1'
+        adapter1.secret = 'adapter1'
+        adapter1.setServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com/33a1c3f9bfb4cf146be142eedfb8b4c7cd77f1ee47d9da2afcd9d30c81c3fe48')
+        adapter1.connect()
+
+        adapter1.setServerConnectListeners((id) => {
+            console.log('adapter 1 connected to server and got id: ' + id)
+        }, () => {
+            console.log('adapter 1 server connect failed')
+        })
+
+        adapter1.setRoomOccupantListener((occupantMap) => {
+            console.log('adapter 1 occupant change')
+            adapter1.disconnect()
+            done()
+        })
+
+        adapter1.setDataChannelListeners((id) => {
+                console.log('adapter 1 data channel opened from: ' + id)
+            }, (id) => {
+                console.log('adapter 1 data channel closed from: ' + id)
+            }, (id, dataType, data) => {
+                console.log('adapter 1 data channel message from: ' + id + ' ' + dataType + ' ' +data)
+            }
+        )
+
+    })
+
+    it('should connect to remote server peer and transmit message', function(done) {
+        this.timeout(8000);
+        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection);
+        adapter1.email = 'adapter1'
+        adapter1.secret = 'adapter1'
+        adapter1.setServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c')
+        adapter1.connect()
+
+        adapter1.setServerConnectListeners((id) => {
+            console.log('adapter connected to server and got id: ' + id)
+        }, () => {
+            console.log('adapter server connect failed')
+        })
+
+        adapter1.setRoomOccupantListener((occupantMap) => {
+            console.log('adapter occupant change: ' + JSON.stringify(occupantMap))
+            setTimeout(() => {
+                adapter1.disconnect()
+                done()
+            }, 4000)
+        })
+
+        adapter1.setDataChannelListeners((id) => {
+                console.log('adapter data channel opened from: ' + id)
+            }, (id) => {
+                console.log('adapter data channel closed from: ' + id)
+            }, (id, dataType, data) => {
+                console.log('adapter data channel message from: ' + id + ' ' + dataType + ' ' +data)
+            }
+        )
+
+    })
+    */
 })

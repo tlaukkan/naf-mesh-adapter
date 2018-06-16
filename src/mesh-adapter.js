@@ -63,7 +63,7 @@ class MeshAdapter {
         this.serverPeerUrls = null
 
         // The signaling channel used for WebRTC signaling.
-        this.signalingChannel = new SignalingChannel(self.WebSocket)
+        this.signalingChannel = new SignalingChannel(this.WebSocket)
         // Map of own signaling server URLs and peer IDs
         this.selfSignalingServerUrlPeerIdMap = new Map()
         // Map of own peer URLs and peer objects
@@ -161,7 +161,9 @@ class MeshAdapter {
                 //console.log('mesh adapter did not send offer as serverPeerUrl was not set via setServerUrl function.')
             }
         }, () => {
-            self.connectFailure();
+            if (self.connectFailure) {
+                self.connectFailure();
+            }
         })
 
         this.signalingChannel.onServerConnected = (signalingServerUrl, selfPeerId) => {
@@ -441,6 +443,7 @@ class MeshAdapter {
 }
 
 if (typeof (NAF) !== 'undefined') {
+// eslint-disable-next-line no-undef
     NAF.adapters.register("mesh", MeshAdapter);
 }
 
