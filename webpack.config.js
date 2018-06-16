@@ -24,7 +24,8 @@ module.exports = {
     plugins: [
         new CopyWebpackPlugin([
             { from: 'static' }
-        ])
+        ]),
+        new webpack.IgnorePlugin(/wrtc/, /console-stamp/, /websocket/, /signaling-server/)
     ],
     mode: "production"
 };

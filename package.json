@@ -48,5 +48,7 @@
     "webpack-cli": "^3.0.2",
     "webpack-dev-server": "^3.1.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@tlaukkan/webrtc-signaling": "0.0.14"
+  }
 }

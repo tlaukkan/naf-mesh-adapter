@@ -1,4 +1,4 @@
-const SignalingChannel = require('./signaling-channel').SignalingChannel;
+const SignalingChannel = require('@tlaukkan/webrtc-signaling').SignalingChannel;
 
 class Peer {
     constructor(peerUrl) {
@@ -23,13 +23,18 @@ class DataMessage {
  */
 class MeshAdapter {
 
-    constructor(PeerConnection) {
+    constructor(PeerConnection, WebSocketImplementation) {
         if (PeerConnection) {
             this.RTCPeerConnection = PeerConnection
         } else {
             this.RTCPeerConnection = RTCPeerConnection
         }
 
+        if (WebSocketImplementation) {
+            this.WebSocket = WebSocketImplementation
+        } else {
+            this.WebSocket = WebSocket
+        }
 
         this.debugLog('--- mesh adapter constructor ---')
 
@@ -58,7 +63,7 @@ class MeshAdapter {
         this.serverPeerUrls = null
 
         // The signaling channel used for WebRTC signaling.
-        this.signalingChannel = new SignalingChannel()
+        this.signalingChannel = new SignalingChannel(self.WebSocket)
         // Map of own signaling server URLs and peer IDs
         this.selfSignalingServerUrlPeerIdMap = new Map()
         // Map of own peer URLs and peer objects
