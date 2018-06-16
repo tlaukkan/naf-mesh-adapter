@@ -1,15 +1,21 @@
-const MeshAdapter = require('../../src/mesh-adapter').MeshAdapter;
-const webrtc = require('wrtc');
-const W3CWebSocket = require('websocket').w3cwebsocket;
 // eslint-disable-next-line no-unused-vars
 const assert = require('assert');
+const uuidv4 = require('uuid/v4');
+
+const WrtcRtcPeerConnection = require('wrtc').RTCPeerConnection;
+const W3CWebSocket = require('websocket').w3cwebsocket;
+
+const WebSocketImplementation = (typeof (WebSocket) !== 'undefined') ? WebSocket : W3CWebSocket
+const RTCPeerConnectionImplementation = (typeof (RTCPeerConnection) !== 'undefined') ? RTCPeerConnection : WrtcRtcPeerConnection
+
+const MeshAdapter = require('../../src/mesh-adapter').MeshAdapter;
 
 describe('mesh-adapter', function() {
     it('should connect and transmit message', function(done) {
         this.timeout(5000);
-        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
+        const adapter1 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter1.email = 'adapter1'
-        adapter1.secret = 'adapter1'
+        adapter1.secret = uuidv4()
 
         adapter1.setServerConnectListeners((id) => {
             console.log('adapter 1 connected to server and got id: ' + id)
@@ -31,9 +37,9 @@ describe('mesh-adapter', function() {
             }
         )
 
-        const adapter2 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
+        const adapter2 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter2.email = 'adapter2'
-        adapter2.secret = 'adapter2'
+        adapter2.secret = uuidv4()
 
         adapter2.connect()
 
@@ -68,16 +74,16 @@ describe('mesh-adapter', function() {
 
     it('should connect broadcast', function(done) {
         this.timeout(5000);
-        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
+        const adapter1 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter1.email = 'adapter1'
-        adapter1.secret = 'adapter1'
+        adapter1.secret = uuidv4()
         adapter1.setRoomOccupantListener((occupantMap) => {
             console.log('adapter 1 occupant change')
         })
 
-        const adapter2 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
+        const adapter2 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter2.email = 'adapter2'
-        adapter2.secret = 'adapter2'
+        adapter2.secret = uuidv4()
 
         adapter2.connect()
 
@@ -95,9 +101,9 @@ describe('mesh-adapter', function() {
             console.log('adapter 2 occupant change')
         })
 
-        const adapter3 = new MeshAdapter(webrtc.RTCPeerConnection, W3CWebSocket);
+        const adapter3 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter3.email = 'adapter3'
-        adapter3.secret = 'adapter3'
+        adapter3.secret = uuidv4()
 
         adapter3.connect()
 

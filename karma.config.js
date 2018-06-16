@@ -3,6 +3,7 @@ module.exports = function (config) {
         frameworks: ['mocha', 'browserify'],
         files: [
             'src/**/*.js',
+            'test/common/**/*.js',
             'test/browser/**/*.js'
         ],
         exclude: [
@@ -29,7 +30,7 @@ module.exports = function (config) {
         port: 9876,  // karma web server port
         colors: true,
         logLevel: config.LOG_INFO,
-        browsers: ['FirefoxHeadless'],
+        browsers: ['FirefoxHeadless', 'ChromeHeadless'],
         autoWatch: false,
         singleRun: true,
         concurrency: Infinity,
