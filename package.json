@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint src test *.js",
     "prepublish": "npm run lint",
-    "start": "node app.js",
+    "start": "node src/app.js",
     "start:dev": "webpack-dev-server --open",
     "test:node": "mocha --exit ./test/node/*.js ./test/common/*.js",
     "test:browser": "karma start karma.config.js --browsers FirefoxHeadless",
