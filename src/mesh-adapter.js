@@ -1,20 +1,7 @@
 const SignalingChannel = require('@tlaukkan/webrtc-signaling').SignalingChannel;
 
-class Peer {
-    constructor(peerUrl) {
-        const lastIndex = peerUrl.lastIndexOf('/');
-        this.peerUrl = peerUrl
-        this.signalingServerUrl = peerUrl.substr(0, lastIndex)
-        this.peerId = peerUrl.substr(lastIndex + 1)
-    }
-}
-
-class DataMessage {
-    constructor(dataType, data) {
-        this.dataType = dataType
-        this.data = data
-    }
-}
+const Peer = require('./mesh-model').Peer
+const DataMessage = require('./mesh-model').DataMessage
 
 /**
  * Mesh Adapter
@@ -36,7 +23,6 @@ class MeshAdapter {
             this.WebSocket = WebSocket
         }
 
-        this.debugLog('--- mesh adapter constructor ---')
 
         this.opened = false
         this.closed = false
@@ -83,8 +69,6 @@ class MeshAdapter {
             this.secret = document.title
             this.debugLogPrefix = document.title
         }
-
-        this.debugLog('--- mesh adapter constructor ---')
     }
 
     // ### INTERFACE FUNCTIONS ###
@@ -98,59 +82,42 @@ class MeshAdapter {
     }
 
     setServerUrl(serverPeerUrl) {
-        this.debugLog('--- mesh adapter set server url ---')
         this.debugLog('set server URL to server peer URL: ' + serverPeerUrl)
         if (serverPeerUrl) {
             this.serverPeerUrls = serverPeerUrl;
         }
-        this.debugLog('--- mesh adapter set server url ---')
     }
 
     setApp(appName) {
-        this.debugLog('--- mesh adapter set app name ---')
         this.app = appName;
-        this.debugLog('--- mesh adapter set app name ---')
     }
 
     setRoom(roomName) {
-        this.debugLog('--- mesh adapter set app name ---')
         this.room = roomName;
-        this.debugLog('--- mesh adapter set app name ---')
     }
 
     setWebRtcOptions(options) {
-        this.debugLog('--- mesh adapter set web rtc options ---')
         this.options = options
-        this.debugLog('--- mesh adapter set web rtc options ---')
     }
 
     setServerConnectListeners(successListener, failureListener) {
-        this.debugLog('--- mesh adapter set server connect listener ---')
         this.connectSuccess = successListener;
         this.connectFailure = failureListener;
-        this.debugLog('--- mesh adapter set server connect listener ---')
     }
 
     setRoomOccupantListener(occupantListener) {
-        this.debugLog('--- mesh adapter set room occupant listener ---')
         this.roomOccupantListener = occupantListener;
-        this.debugLog('--- mesh adapter set room occupant listener ---')
     }
 
     setDataChannelListeners(openListener, closedListener, messageListener) {
-        this.debugLog('--- mesh adapter set data channel listeners ---')
         this.openListener = openListener;
         this.closedListener = closedListener;
         this.messageListener = messageListener;
-        this.debugLog('--- mesh adapter set data channel listeners ---')
     }
 
     connect() {
+        if (this.opened) { throw Error('mesh adapter - connect: already connected.') }
         const self = this
-
-        if (this.opened) {
-            throw Error('mesh adapter - connect: already connected.')
-        }
 
         this.opened = true
 
@@ -197,6 +164,8 @@ class MeshAdapter {
     }
 
     disconnect() {
+        if (this.closed) { return }
+
         const self = this
         this.closed = true
         this.channels.forEach((channel, peerUrl) => {
@@ -206,9 +175,8 @@ class MeshAdapter {
     }
 
     shouldStartConnectionTo(clientId) {
-        if (this.closed) {
-            return false
-        }
+        if (this.closed) { return }
+
         this.debugLog('--- mesh adapter should start connection to ---')
         // return TRUE if connections does not yet have clientId
         this.debugLog('--- mesh adapter should start connection to ---')
@@ -216,12 +184,9 @@ class MeshAdapter {
     }
 
     startStreamConnection(clientId) {
-        if (this.closed) {
-            return
-        }
-
+        if (this.closed) { return }
         const self = this
-        this.debugLog('--- mesh adapter start stream connection ---')
+
         const peer = new Peer(clientId)
         if (self.selfSignalingServerUrlPeerIdMap.has(peer.signalingServerUrl)) {
             const selfPeerId = self.selfSignalingServerUrlPeerIdMap.get(peer.signalingServerUrl)
@@ -232,11 +197,9 @@ class MeshAdapter {
                 self.sendOffer(peer, signalServerUrl + '/' + selfPeerId).then();
             })
         }
-        this.debugLog('--- mesh adapter start stream connection ---')
     }
 
     closeStreamConnection(clientId) {
-        this.debugLog('--- mesh adapter close stream connection ---')
         const channel = this.channels.get(clientId)
         const connection = this.connections.get(clientId)
 
@@ -262,69 +225,49 @@ class MeshAdapter {
             this.peers.set(clientId, false)
             this.notifyOccupantsChanged()
         }
-
-        this.debugLog('--- mesh adapter close stream connection ---')
     }
 
     getConnectStatus(clientId) {
-        this.debugLog('--- mesh adapter get connect status ---')
         if (this.channels.has(clientId)) {
-            this.debugLog('--- mesh adapter get connect status ---')
             return 'IS_CONNECTED';
         } else {
-            this.debugLog('--- mesh adapter get connect status ---')
             return'NOT_CONNECTED';
         }
     }
 
     sendData(clientId, dataType, data) {
-        if (this.closed) {
-            return
-        }
-        this.debugLog('--- mesh adapter send data ---')
+        if (this.closed) { return }
+
         if (this.channels.has(clientId)) {
             this.channels.get(clientId).send(JSON.stringify(new DataMessage(dataType, data)))
         }
-        this.debugLog('--- mesh adapter send data ---')
     }
 
     sendDataGuaranteed(clientId, dataType, data) {
-        if (this.closed) {
-            return
-        }
-        this.debugLog('--- mesh adapter send data guaranteed ---')
+        if (this.closed) { return }
+
         this.sendData(clientId, dataType, data)
-        this.debugLog('--- mesh adapter send data guaranteed ---')
     }
 
 
     broadcastData(dataType, data) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
-        this.debugLog('--- mesh adapter broadcast data ---')
         this.channels.forEach(channel => {
             channel.send(JSON.stringify(new DataMessage(dataType, data)))
         })
-        this.debugLog('--- mesh adapter broadcast data ---')
     }
 
     broadcastDataGuaranteed(dataType, data) {
-        if (this.closed) {
-            return
-        }
-        this.debugLog('--- mesh adapter broadcast data guaranteed ---')
+        if (this.closed) { return }
+
         this.broadcastData(dataType, data)
-        this.debugLog('--- mesh adapter broadcast data guaranteed ---')
     }
 
     // ### INTERNAL FUNCTIONS ###
 
     async offer(peer, selfPeerId) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         const self = this
         const selfPeerUrl = self.signalingServerUrl + '/' + selfPeerId
@@ -339,9 +282,7 @@ class MeshAdapter {
     }
 
     async delayedSendOffer(peer, selfPeerUrl) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         const self = this
         // TODO remove delayed connect created for test
@@ -384,7 +325,9 @@ class MeshAdapter {
     }
 
     createRTCPeerConnection(peerUrl) {
+        if (this.closed) { return }
         const self = this
+
         if (self.connections.has(peerUrl)) {
             throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
         }
@@ -400,12 +343,11 @@ class MeshAdapter {
     }
 
     setupChannel(channel, peerUrl) {
-        this.debugLog('channel opened: ' + peerUrl)
-        if (this.closed) {
-            return
-        }
-
+        if (this.closed) { return }
         const self = this
+
+        this.debugLog('channel opened: ' + peerUrl)
+
         channel.onopen = () => {
             self.channels.set(peerUrl, channel)
             if (self.openListener) {
@@ -447,9 +389,7 @@ class MeshAdapter {
     }
 
     notifyOccupantsChanged() {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         this.roomOccupantListener(Array.from(this.peers).reduce((obj, [key, value]) => (
             Object.assign(obj, { [key]: value })
@@ -457,9 +397,7 @@ class MeshAdapter {
     }
 
     processReceivedPeer(peerUrl) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         const self = this
         self.debugLog('received peer: ' + peerUrl)
@@ -474,9 +412,7 @@ class MeshAdapter {
     }
 
     broadcastPeer(peerUrl) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         const self = this
         self.debugLog('broadcasting peer : ' + peerUrl)
@@ -489,9 +425,7 @@ class MeshAdapter {
     }
 
     sendConnectedPeers(peerUrl) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
         const self = this
         self.debugLog('sending connected peers to: ' + peerUrl)
