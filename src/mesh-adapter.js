@@ -1,7 +1,7 @@
 const SignalingChannel = require('@tlaukkan/webrtc-signaling').SignalingChannel;
 
-const Peer = require('./mesh-model').Peer
-const DataMessage = require('./mesh-model').DataMessage
+const Peer = require('./mesh-adapter-model').Peer
+const DataMessage = require('./mesh-adapter-model').DataMessage
 
 /**
  * Mesh Adapter
