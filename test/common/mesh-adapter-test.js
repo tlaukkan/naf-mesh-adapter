@@ -70,19 +70,20 @@ describe('mesh-adapter', function() {
     })
 
     it('should connect broadcast', function(done) {
-        this.timeout(5000);
+        this.timeout(10000);
         const adapter1 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter1.email = 'adapter1'
         adapter1.secret = uuidv4()
         adapter1.setRoomOccupantListener((occupantMap) => {
             console.log('adapter 1 occupant change')
         })
+        adapter1.setServerConnectListeners((id) => {
+            console.log('adapter 1 connected to server and got id: ' + id)
+        })
 
         const adapter2 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter2.email = 'adapter2'
         adapter2.secret = uuidv4()
-
-        adapter2.connect()
 
         adapter2.setServerConnectListeners((id) => {
             console.log('adapter 2 connected to server and got id: ' + id)
@@ -127,69 +128,4 @@ describe('mesh-adapter', function() {
         })
     })
 
-    /*
-    it('should connect to local server peer and transmit message', function(done) {
-        this.timeout(5000);
-        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection);
-        adapter1.email = 'adapter1'
-        adapter1.secret = 'adapter1'
-        adapter1.setServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com/33a1c3f9bfb4cf146be142eedfb8b4c7cd77f1ee47d9da2afcd9d30c81c3fe48')
-        adapter1.connect()
-
-        adapter1.setServerConnectListeners((id) => {
-            console.log('adapter 1 connected to server and got id: ' + id)
-        }, () => {
-            console.log('adapter 1 server connect failed')
-        })
-
-        adapter1.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 1 occupant change')
-            adapter1.disconnect()
-            done()
-        })
-
-        adapter1.setDataChannelListeners((id) => {
-                console.log('adapter 1 data channel opened from: ' + id)
-            }, (id) => {
-                console.log('adapter 1 data channel closed from: ' + id)
-            }, (id, dataType, data) => {
-                console.log('adapter 1 data channel message from: ' + id + ' ' + dataType + ' ' +data)
-            }
-        )
-
-    })
-
-    it('should connect to remote server peer and transmit message', function(done) {
-        this.timeout(8000);
-        const adapter1 = new MeshAdapter(webrtc.RTCPeerConnection);
-        adapter1.email = 'adapter1'
-        adapter1.secret = 'adapter1'
-        adapter1.setServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c')
-        adapter1.connect()
-
-        adapter1.setServerConnectListeners((id) => {
-            console.log('adapter connected to server and got id: ' + id)
-        }, () => {
-            console.log('adapter server connect failed')
-        })
-
-        adapter1.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter occupant change: ' + JSON.stringify(occupantMap))
-            setTimeout(() => {
-                adapter1.disconnect()
-                done()
-            }, 4000)
-        })
-
-        adapter1.setDataChannelListeners((id) => {
-                console.log('adapter data channel opened from: ' + id)
-            }, (id) => {
-                console.log('adapter data channel closed from: ' + id)
-            }, (id, dataType, data) => {
-                console.log('adapter data channel message from: ' + id + ' ' + dataType + ' ' +data)
-            }
-        )
-
-    })
-    */
 })
