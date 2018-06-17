@@ -6,7 +6,8 @@ const DataMessage = require('./mesh-model').DataMessage
 /**
  * Mesh Adapter
  *
- * Peer URLs structure is: '<signalingServerUrl>/<peerId>'
+ * NAF adapter Client ID corresponds to SignalChannel Peer URL.
+ * Peer URL format is: '<signalingServerUrl>/<peerId>'
  */
 class MeshAdapter {
 
@@ -35,15 +36,15 @@ class MeshAdapter {
         this.room = 'default';
 
         // Callback for server connection success.
-        this.onServerConnectSuccess = null
+        this.onServerConnected = null
         // Callback for server connection failure.
-        this.onServerConnectFailure = null
+        this.onServerConnectFailed = null
         // Callback for room occupants changed.
         this.onRoomOccupantsChanged = null
         // Callback for data connection open
-        this.onDataConnectionOpen = null
+        this.onDataConnectionOpened = null
         // Callback for data connection close
-        this.onDataConnectionClose = null
+        this.onDataConnectionClosed = null
         // Callback for data connection message received
         this.onDataConnectionMessageReceived = null
 
@@ -115,8 +116,8 @@ class MeshAdapter {
     }
 
     setServerConnectListeners(successListener, failureListener) {
-        this.onServerConnectSuccess = successListener;
-        this.onServerConnectFailure = failureListener;
+        this.onServerConnected = successListener;
+        this.onServerConnectFailed = failureListener;
     }
 
     setRoomOccupantListener(occupantListener) {
@@ -124,8 +125,8 @@ class MeshAdapter {
     }
 
     setDataChannelListeners(openListener, closedListener, messageListener) {
-        this.onDataConnectionOpen = openListener;
-        this.onDataConnectionClose = closedListener;
+        this.onDataConnectionOpened = openListener;
+        this.onDataConnectionClosed = closedListener;
         this.onDataConnectionMessageReceived = messageListener;
     }
 
@@ -188,24 +189,6 @@ class MeshAdapter {
 
     // ### INTERNAL FUNCTIONS ###
 
-    // TODO Remove delayed sending done for naf adapter testing page.
-    async openPeerConnectionWithDelay(peerUrl) {
-        if (this.closed) { return }
-
-        const self = this
-
-        const peer = new Peer(peerUrl)
-        if (self.signalingChannel.clients.has(peer.signalingServerUrl)) {
-            const selfPeerId = self.selfSignalingServerUrlPeerIdMap.get(peer.signalingServerUrl)
-            const selfPeerUrl = peer.signalingServerUrl + '/' + selfPeerId
-            await this.delayedSendOffer(peer, selfPeerUrl);
-        } else {
-            self.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
-                await this.delayedSendOffer(peer, signalServerUrl + '/' + selfPeerId);
-            })
-        }
-    }
-
     openPeerConnection(peerUrl) {
         if (this.closed) { return }
 
@@ -219,6 +202,24 @@ class MeshAdapter {
         } else {
             self.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
                 self.sendOffer(peer, signalServerUrl + '/' + selfPeerId).then();
+            })
+        }
+    }
+
+    // TODO Remove delayed sending done for naf adapter testing page.
+    async delayedOpenPeerConnection(peerUrl) {
+        if (this.closed) { return }
+
+        const self = this
+
+        const peer = new Peer(peerUrl)
+        if (self.signalingChannel.clients.has(peer.signalingServerUrl)) {
+            const selfPeerId = self.selfSignalingServerUrlPeerIdMap.get(peer.signalingServerUrl)
+            const selfPeerUrl = peer.signalingServerUrl + '/' + selfPeerId
+            await this.delayedSendOffer(peer, selfPeerUrl);
+        } else {
+            self.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
+                await this.delayedSendOffer(peer, signalServerUrl + '/' + selfPeerId);
             })
         }
     }
@@ -237,8 +238,8 @@ class MeshAdapter {
             channel.close()
             this.debugLog('channel closed: ' + peerUrl)
             this.debugLog('mesh adapter removed channel ' + peerUrl)
-            if (this.onDataConnectionClose) {
-                this.onDataConnectionClose(peerUrl);
+            if (this.onDataConnectionClosed) {
+                this.onDataConnectionClosed(peerUrl);
             }
         }
 
@@ -320,8 +321,8 @@ class MeshAdapter {
 
         channel.onopen = () => {
             self.channels.set(peerUrl, channel)
-            if (self.onDataConnectionOpen) {
-                self.onDataConnectionOpen(peerUrl);
+            if (self.onDataConnectionOpened) {
+                self.onDataConnectionOpened(peerUrl);
             }
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.peers.set(peerUrl, true)
@@ -398,21 +399,22 @@ class MeshAdapter {
         const self = this
         self.selfPeerUrl = signalingServerUrl + '/' + selfPeerId
 
-        if (self.onServerConnectSuccess) {
-            self.onServerConnectSuccess(self.selfPeerUrl);
+        if (self.onServerConnected) {
+            self.onServerConnected(self.selfPeerUrl);
         }
 
         if (self.serverPeerUrls && self.serverPeerUrls.length > 3) {
             self.serverPeerUrls.split(',').forEach(async serverPeerUrl => {
-                await self.openPeerConnectionWithDelay(serverPeerUrl);
+                await self.delayedOpenPeerConnection(serverPeerUrl);
             })
         }
+
         self.debugLog('mesh adapter: connected to primary signaling server.')
     }
 
     processPrimarySignalingServerConnectFailed() {
-        if (this.onServerConnectFailure) {
-            this.onServerConnectFailure();
+        if (this.onServerConnectFailed) {
+            this.onServerConnectFailed();
         }
         console.log.error('mesh adapter:  primary signaling server connect failed.')
     }
@@ -441,29 +443,6 @@ class MeshAdapter {
     }
 
     // ### PEER PROCESSING
-    notifyOccupantsChanged() {
-        if (this.closed) { return }
-
-        this.onRoomOccupantsChanged(Array.from(this.peers).reduce((obj, [key, value]) => (
-            Object.assign(obj, { [key]: value })
-        ), {}))
-    }
-
-    processReceivedPeer(peerUrl) {
-        if (this.closed) { return }
-
-        const self = this
-        self.debugLog('received peer: ' + peerUrl)
-        if (peerUrl !== self.selfPeerUrl) {
-            if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
-                self.debugLog('setting up peer: ' + peerUrl)
-                self.broadcastPeer(peerUrl)
-                self.sendConnectedPeers(peerUrl)
-                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl).then().catch()
-            }
-        }
-    }
-
     broadcastPeer(peerUrl) {
         if (this.closed) { return }
 
@@ -489,6 +468,31 @@ class MeshAdapter {
             }
         })
     }
+
+    processReceivedPeer(peerUrl) {
+        if (this.closed) { return }
+
+        const self = this
+        self.debugLog('received peer: ' + peerUrl)
+        if (peerUrl !== self.selfPeerUrl) {
+            if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
+                self.debugLog('setting up peer: ' + peerUrl)
+                self.broadcastPeer(peerUrl)
+                self.sendConnectedPeers(peerUrl)
+                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl).then().catch()
+            }
+        }
+    }
+
+    notifyOccupantsChanged() {
+        if (this.closed) { return }
+
+        this.onRoomOccupantsChanged(Array.from(this.peers).reduce((obj, [key, value]) => (
+            Object.assign(obj, { [key]: value })
+        ), {}))
+    }
+
+    // ### UTILITY METHODS
 
     debugLog(message) {
         if (this.debugLogPrefix) {
