@@ -270,6 +270,12 @@ class MeshAdapter {
         if (this.closed) { return }
 
         const peerUrl = peer.peerUrl
+
+        if (this.connections.has(peerUrl)) {
+            console.log('mesh adapter - send offer : already connected to peer: ' + peerUrl)
+            return
+        }
+
         const connection = this.createRtcPeerConnection(peerUrl);
 
         const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
@@ -283,6 +289,12 @@ class MeshAdapter {
         if (this.closed) { return }
 
         const peerUrl = signalinServerUrl + '/' + peerId
+
+        if (this.connections.has(peerUrl)) {
+            console.log('mesh adapter - process offer : already connected to peer: ' + peerUrl)
+            return
+        }
+
         const connection = this.createRtcPeerConnection(peerUrl);
 
         connection.ondatachannel = (event) => {
@@ -299,9 +311,6 @@ class MeshAdapter {
         if (this.closed) { return }
         const self = this
 
-        if (self.connections.has(peerUrl)) {
-            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
-        }
         const connection = new self.RTCPeerConnectionImplementation(self.configuration)
         this.debugLog('connection created: ' + peerUrl)
         self.connections.set(peerUrl, connection)
