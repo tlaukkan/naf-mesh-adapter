@@ -15,7 +15,7 @@ exports.DataMessage = class {
 }
 
 exports.DataTypes = {
-    FIND_PEERS: 'FIND_PEERS',
+    FIND_CHANGED_PEERS: 'FIND_CHANGED_PEERS',
     CHANGED_PEERS: 'CHANGED_PEERS'
 };
 
@@ -40,15 +40,15 @@ exports.PeerData = class {
     }
 }
 
-exports.FindPeers = class {
-    constructor(position, range) {
-        this.position = position;
+exports.FindChangedPeersMessage = class {
+    constructor(peer, range) {
+        this.peer = peer;
         this.range = range;
     }
 }
 
-exports.ChangedPeers = class {
-    constructor(peerDataList) {
-        this.peerDataList = peerDataList;
+exports.ChangedPeersMessage = class {
+    constructor(peers) {
+        this.peers = peers;
     }
 }

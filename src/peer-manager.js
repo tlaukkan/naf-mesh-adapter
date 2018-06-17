@@ -12,8 +12,21 @@ exports.PeerManager = class {
         this.peerConnections = new Map()
     }
 
+    peekPeersChanged() {
+
+    }
+
+    /**
+     * Apply changed peers and return all peers minus the peer identified the peer URL
+     * @param peerUrl the peer URL
+     * @param changedPeers the changed peers
+     * @returns all currently known peers
+     */
     peersChanged(peerUrl, changedPeers) {
         changedPeers.forEach(peer => {
+            if (!peer.url || !peer.status || !peer.position) {
+                throw new Error("Peer data object incomplete: " + JSON.stringify(peer));
+            }
             if (this.peers.has(peer.url)) {
                 if (peer.status === PeerStatus.UNAVAILABLE) {
                     this.peers.set(peer.url, peer)
@@ -36,15 +49,25 @@ exports.PeerManager = class {
         return peersWithUnavailablePeersIncluded
     }
 
-    findPeersChanged(peerUrl, position, range) {
+    /**
+     * Find changed peers affecting peer identified by peer URL
+     * @param peerUrl the peer URL
+     * @param position the peer position
+     * @param range the range
+     * @param applyChanges if TRUE apply changed peers to the peer's map of connected peers
+     * @returns {*}
+     */
+    findPeersChanged(peerUrl, position, range, applyChanges) {
         const peersInRange = this.findPeersInRange(position, range)
 
         if (!this.peerConnections.has(peerUrl)) {
-            this.peerConnections.set(peerUrl, peersInRange);
+            if (applyChanges) {
+                this.peerConnections.set(peerUrl, peersInRange);
+            }
             return Array.from(peersInRange.values()).filter(p => p.url !== peerUrl);
         }
 
-        const currentPeers  = this.peerConnections.get(peerUrl)
+        const currentPeers  = applyChanges ? this.peerConnections.get(peerUrl) : new Map(this.peerConnections.get(peerUrl));
 
         const peersAdded = [];
         const peersRemoved = [];
@@ -80,6 +103,22 @@ exports.PeerManager = class {
         });
 
         return peersAdded.concat(peersRemoved)
+    }
+
+    /**
+     * Filter from the change list the actually changed peers affecting the peer identified by peer URL.
+     * @param peerUrl the peer URL
+     * @param position the position
+     * @param range the range
+     * @param changedPeers the changed peers
+     * @returns changed peers that affect the peer identified by peer URL
+     */
+    peekChangedPeers(peerUrl, position, range, changedPeers) {
+        const savedPeers = new Map(this.peers);
+        this.peersChanged(peerUrl, changedPeers);
+        const verifiedChangedPeers = this.findPeersChanged(peerUrl, position, range, false);
+        this.peers = savedPeers
+        return verifiedChangedPeers;
     }
 
     findPeersInRange(position, range) {

@@ -2,6 +2,12 @@ const SignalingChannel = require('@tlaukkan/webrtc-signaling').SignalingChannel;
 
 const Peer = require('./mesh-adapter-model').Peer;
 const DataMessage = require('./mesh-adapter-model').DataMessage;
+const PeerStatus = require('./mesh-adapter-model').PeerStatus;
+const PeerData = require('./mesh-adapter-model').PeerData;
+const DataTypes = require('./mesh-adapter-model').DataTypes;
+const FindChangedPeersMessage = require('./mesh-adapter-model').FindChangedPeersMessage;
+const ChangedPeersMessage = require('./mesh-adapter-model').ChangedPeersMessage;
+const PeerPosition = require('./mesh-adapter-model').PeerPosition;
 const PeerManager = require('./peer-manager').PeerManager;
 
 /**
@@ -80,7 +86,9 @@ class MeshAdapter {
         // Map of peer URL and RTC Data Channels
         this.channels = new Map()
         // Map of peer URLs and true or false indicating connection status
-        this.peers = new Map()
+        this.peers = new Map();
+
+        this.position = new PeerPosition(0,0,0);
 
         //TODO Remove hack added for adapter test page
         if (typeof (document) !== 'undefined') {
@@ -231,10 +239,11 @@ class MeshAdapter {
         const channel = this.channels.get(peerUrl)
         const connection = this.connections.get(peerUrl)
 
-        if (this.peers.has(peerUrl) && this.peers.get(peerUrl)) {
+        /*if (this.peers.has(peerUrl) && this.peers.get(peerUrl)) {
             this.peers.set(peerUrl, false)
             this.notifyOccupantsChanged()
-        }
+        }*/
+        this.removePeer(peerUrl)
 
         if (channel) {
             this.channels.delete(peerUrl)
@@ -284,7 +293,7 @@ class MeshAdapter {
         const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
         this.setupRtcDataChannel(channel, peerUrl);
 
-        await this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection)
+        this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection).then().catch()
         this.debugLog('mesh adapter sent offer to ' + peerUrl)
     }
 
@@ -338,8 +347,9 @@ class MeshAdapter {
             }
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.peers.set(peerUrl, true)
-                self.broadcastPeer(peerUrl)
-                self.notifyOccupantsChanged()
+                //self.broadcastPeer(peerUrl)
+                //self.notifyOccupantsChanged()
+                self.findChangedPeers(peerUrl)
             }
             self.debugLog("channel " + channel.label + " opened")
         };
@@ -360,9 +370,11 @@ class MeshAdapter {
             const dataType = message.dataType;
             const data = message.data;
 
-            if (dataType === 'PEER') {
-                this.processReceivedPeer(data);
-            } else {
+            if (dataType === DataTypes.FIND_CHANGED_PEERS) {
+                self.processFindChangedPeers(peerUrl, data)
+            } else if (dataType === DataTypes.CHANGED_PEERS) {
+                self.processChangedPeers(peerUrl, data)
+            } else{
                 if (self.onDataConnectionMessageReceived) {
                     self.onDataConnectionMessageReceived(from, dataType, data);
                 }
@@ -404,11 +416,14 @@ class MeshAdapter {
 
     closeSignalingServerConnection() {
         const self = this
+        console.log("mesh adapter - close all connections.")
+
+        this.signalingChannel.close()
 
         this.channels.forEach((channel, peerUrl) => {
             self.closeStreamConnection(peerUrl)
         })
-        this.signalingChannel.close()
+
     }
 
     async processPrimarySignalingServerConnected(signalingServerUrl, selfPeerId) {
@@ -424,6 +439,9 @@ class MeshAdapter {
                 await self.delayedOpenPeerConnection(serverPeerUrl);
             })
         }
+
+        this.selfPeerData = new PeerData(self.selfPeerUrl, PeerStatus.AVAILABLE, self.position)
+        this.manager.peersChanged(self.selfPeerUrl, [this.selfPeerData])
 
         self.debugLog('mesh adapter: connected to primary signaling server.')
     }
@@ -459,53 +477,81 @@ class MeshAdapter {
     }
 
     // ### PEER PROCESSING
-    broadcastPeer(peerUrl) {
+
+    findChangedPeers(peerUrl) {
         if (this.closed) { return }
 
-        const self = this
-        self.debugLog('broadcasting peer : ' + peerUrl)
-        self.peers.forEach((connected, connectedPeerUrl) => {
-            if (connected && peerUrl !== connectedPeerUrl) {
-                self.debugLog('sent peer: ' + peerUrl + ' to ' + connectedPeerUrl)
-                self.sendData(connectedPeerUrl, 'PEER', peerUrl)
-            }
-        })
+        // Do not send this message to self.
+        if (this.selfPeers.has(peerUrl)) {
+            console.error('mesh adapter - find changed peers requested to be sent to self. Self identity from another signaling server?: ' + peerUrl)
+            return
+        }
+
+        console.log('mesh adapter - sending find changed peers to : ' + peerUrl)
+
+        const findChangedPeersMessage = new FindChangedPeersMessage(this.selfPeerData, 100);
+        this.sendData(peerUrl, DataTypes.FIND_CHANGED_PEERS, findChangedPeersMessage)
     }
 
-    sendConnectedPeers(peerUrl) {
+    processFindChangedPeers(peerUrl, findChangedPeersMessage) {
         if (this.closed) { return }
 
-        const self = this
-        self.debugLog('sending connected peers to: ' + peerUrl)
-        self.peers.forEach((connected, connectedPeerUrl) => {
-            if (connected && peerUrl !== connectedPeerUrl) {
-                self.debugLog('sent peer: ' + connectedPeerUrl + ' to ' + peerUrl)
-                self.sendData(peerUrl, 'PEER', connectedPeerUrl)
-            }
-        })
+        const peer = findChangedPeersMessage.peer;
+        if (peer.status === PeerStatus.UNAVAILABLE) {
+            console.warn('mesh adapter - find changed peers received with container peer being of status UNAVAILABLE.');
+            return;
+        }
+
+        console.log('mesh adapter - process find changed peers from : ' + peerUrl)
+
+        // Manager does not yet contain peer then add it to manager and notify
+        if (!this.manager.peers.has(peer.url)) {
+            const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [peer]);
+            this.notifyPeersChanged(currentPeers);
+        }
+
+        // Send changed peers to back to the peer.
+        const changedPeersMessage = new ChangedPeersMessage(this.manager.findPeersChanged(peer.url, peer.position, findChangedPeersMessage.range));
+        this.sendData(peerUrl, DataTypes.CHANGED_PEERS, changedPeersMessage)
     }
 
-    processReceivedPeer(peerUrl) {
+    processChangedPeers(peerUrl, changedPeers) {
         if (this.closed) { return }
 
-        const self = this
-        self.debugLog('received peer: ' + peerUrl)
-        if (!self.selfPeers.has(peerUrl)) {
-            if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
-                self.debugLog('setting up peer: ' + peerUrl)
-                self.broadcastPeer(peerUrl)
-                self.sendConnectedPeers(peerUrl)
-                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl).then().catch()
+        // Find out which peers were actually changed from peer manager perspective
+        const actualChangedPeers = this.manager.peekChangedPeers(this.selfPeerData.url, this.selfPeerData.position, 100, changedPeers.peers)
+
+        console.log('mesh adapter - process changed peers from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
+
+        // Send offer to all peers which became available.
+        actualChangedPeers.forEach(peer => {
+            if (peer.status == PeerStatus.AVAILABLE) {
+                this.sendOffer(new Peer(peer.url), this.selfPeerUrl).then().catch()
             }
+        });
+    }
+
+    removePeer(peerUrl) {
+        if (this.closed) { return }
+
+        // TODO Add mapping for foreign signaling servers
+        // Do not remove self.
+        if (this.selfPeers.has(peerUrl)) {
+            console.error('mesh adapter - remove peers at self. Self identity from another signaling server?: ' + peerUrl)
+            return
+        }
+
+        if (this.manager.peers.has(peerUrl)) {
+            console.log("mesh adapter - remove peer: " + peerUrl);
+            const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [new PeerData(peerUrl, PeerStatus.UNAVAILABLE, new PeerPosition(0,0,0))]);
+            this.notifyPeersChanged(currentPeers);
         }
     }
 
-    notifyOccupantsChanged() {
-        if (this.closed) { return }
-
-        this.onRoomOccupantsChanged(Array.from(this.peers).reduce((obj, [key, value]) => (
-            Object.assign(obj, { [key]: value })
-        ), {}))
+    notifyPeersChanged(peers) {
+        const peerMap = new Map()
+        peers.forEach(peer => { peerMap.set(peer.url, peer.status === PeerStatus.AVAILABLE) });
+        this.onRoomOccupantsChanged(Array.from(peerMap).reduce((obj, [key, value]) => ( Object.assign(obj, {[key]: value}) ), {}));
     }
 
     // ### UTILITY METHODS

@@ -21,7 +21,7 @@ describe('mesh-adapter', function() {
         })
 
         adapter1.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 1 occupant change')
+            console.log('adapter 1 occupant change: ' + Object.keys(occupantMap).length)
         })
 
         adapter1.setDataChannelListeners((id) => {
@@ -51,7 +51,7 @@ describe('mesh-adapter', function() {
         })
 
         adapter2.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 2 occupant change')
+            console.log('adapter 2 occupant change: ' + Object.keys(occupantMap).length)
         })
 
         adapter2.setDataChannelListeners((id) => {
