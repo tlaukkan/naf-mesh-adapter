@@ -75,7 +75,7 @@ describe('mesh-adapter', function() {
         adapter1.email = 'adapter1'
         adapter1.secret = uuidv4()
         adapter1.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 1 occupant change')
+            console.log('adapter 1 occupant change: ' + Object.keys(occupantMap).length)
         })
         adapter1.setServerConnectListeners((id) => {
             console.log('adapter 1 connected to server and got id: ' + id)
@@ -96,7 +96,7 @@ describe('mesh-adapter', function() {
         })
 
         adapter2.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 2 occupant change')
+            console.log('adapter 2 occupant change: ' + Object.keys(occupantMap).length)
         })
 
         const adapter3 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
@@ -115,17 +115,25 @@ describe('mesh-adapter', function() {
             console.log('adapter 3 server connect failed')
         })
 
-        var adapter3OccupantCount = 0
         adapter3.setRoomOccupantListener((occupantMap) => {
-            console.log('adapter 3 occupant change')
-            adapter3OccupantCount++
-            if (adapter3OccupantCount === 2) {
+            console.log('adapter 3 occupant change: ' + Object.keys(occupantMap).length)
+            if (Object.keys(occupantMap).length === 2) {
                 adapter1.disconnect()
                 adapter2.disconnect()
                 adapter3.disconnect()
                 done()
             }
         })
+
+        adapter3.setDataChannelListeners((id) => {
+                console.log('adapter 3 data channel opened from: ' + id)
+            }, (id) => {
+                console.log('adapter 3 data channel closed from: ' + id)
+            }, (id, dataType, data) => {
+                console.log('adapter 3 data channel message from: ' + id + ' ' + dataType + ' ' +data)
+                adapter1.closeStreamConnection(id)
+            }
+        )
     })
 
 })

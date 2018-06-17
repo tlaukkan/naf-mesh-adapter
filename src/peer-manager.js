@@ -12,7 +12,7 @@ exports.PeerManager = class {
         this.peerConnections = new Map()
     }
 
-    peersChanged(changedPeers) {
+    peersChanged(peerUrl, changedPeers) {
         changedPeers.forEach(peer => {
             if (this.peers.has(peer.url)) {
                 if (peer.status === PeerStatus.UNAVAILABLE) {
@@ -25,7 +25,7 @@ exports.PeerManager = class {
             }
         });
 
-        const peersWithUnavailablePeersIncluded = Array.from(this.peers.values());
+        const peersWithUnavailablePeersIncluded = Array.from(this.peers.values()).filter(p => p.url !== peerUrl);
 
         this.peers.forEach(peer => {
             if (peer.status === PeerStatus.UNAVAILABLE) {
@@ -41,7 +41,7 @@ exports.PeerManager = class {
 
         if (!this.peerConnections.has(peerUrl)) {
             this.peerConnections.set(peerUrl, peersInRange);
-            return Array.from(peersInRange.values());
+            return Array.from(peersInRange.values()).filter(p => p.url !== peerUrl);
         }
 
         const currentPeers  = this.peerConnections.get(peerUrl)
@@ -68,11 +68,15 @@ exports.PeerManager = class {
         });
 
         peersAdded.forEach(peer => {
-           currentPeers.set(peer.url, peer)
+            if (peerUrl !== peer.url) {
+                currentPeers.set(peer.url, peer)
+            }
         });
 
         peersRemoved.forEach(peer => {
-            currentPeers.delete(peer.url)
+            if (peerUrl !== peer.url) {
+                currentPeers.delete(peer.url)
+            }
         });
 
         return peersAdded.concat(peersRemoved)

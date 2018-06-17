@@ -1,7 +1,8 @@
 const SignalingChannel = require('@tlaukkan/webrtc-signaling').SignalingChannel;
 
-const Peer = require('./mesh-adapter-model').Peer
-const DataMessage = require('./mesh-adapter-model').DataMessage
+const Peer = require('./mesh-adapter-model').Peer;
+const DataMessage = require('./mesh-adapter-model').DataMessage;
+const PeerManager = require('./peer-manager').PeerManager;
 
 /**
  * Mesh Adapter
@@ -87,6 +88,8 @@ class MeshAdapter {
             this.secret = document.title
             this.debugLogPrefix = document.title
         }
+
+        this.manager = new PeerManager();
     }
 
     // ### INTERFACE FUNCTIONS ###
@@ -487,7 +490,7 @@ class MeshAdapter {
 
         const self = this
         self.debugLog('received peer: ' + peerUrl)
-        if (peerUrl !== self.selfPeerUrl) {
+        if (!self.selfPeers.has(peerUrl)) {
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.debugLog('setting up peer: ' + peerUrl)
                 self.broadcastPeer(peerUrl)
