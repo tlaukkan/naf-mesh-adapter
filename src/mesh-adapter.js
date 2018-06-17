@@ -283,12 +283,7 @@ class MeshAdapter {
 
         const peerUrl = peer.peerUrl
 
-        if (this.connections.has(peerUrl)) {
-            console.warn('mesh adapter - send offer : already connected to peer: ' + peerUrl)
-            return
-        }
-
-        const connection = this.createRtcPeerConnection(peerUrl);
+        const connection = this.getRtcPeerConnection(peerUrl);
 
         const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
         this.setupRtcDataChannel(channel, peerUrl);
@@ -302,12 +297,7 @@ class MeshAdapter {
 
         const peerUrl = signalinServerUrl + '/' + peerId
 
-        if (this.connections.has(peerUrl)) {
-            this.debugLog('mesh adapter - process offer : already connected to peer: ' + peerUrl)
-            return
-        }
-
-        const connection = this.createRtcPeerConnection(peerUrl);
+        const connection = this.getRtcPeerConnection(peerUrl);
 
         connection.ondatachannel = (event) => {
             const channel = event.channel;
@@ -319,24 +309,25 @@ class MeshAdapter {
         return connection
     }
 
-    createRtcPeerConnection(peerUrl) {
+    getRtcPeerConnection(peerUrl) {
         if (this.closed) { return }
         const self = this
 
-        const connection = new self.RTCPeerConnectionImplementation(self.configuration)
-        this.debugLog('connection created: ' + peerUrl)
-
+        let connection
         if (self.connections.has(peerUrl)) {
-            console.error('mesh adapter - create RTC peer connection: peer already connected: ' + peerUrl)
-            throw Error('peer already connected: ' + peerUrl);
+            connection = self.connections.get(peerUrl)
+            console.info('mesh adapter - create RTC peer connection: peer already connected: ' + peerUrl)
+        } else {
+            connection = new self.RTCPeerConnectionImplementation(self.configuration)
+            self.connections.set(peerUrl, connection)
+            connection.oniceconnectionstatechange = function () {
+                if (connection.iceConnectionState == 'disconnected') {
+                    self.closePeerConnection(peerUrl)
+                }
+            }
+            this.debugLog('connection created: ' + peerUrl)
         }
 
-        self.connections.set(peerUrl, connection)
-        connection.oniceconnectionstatechange = function () {
-            if (connection.iceConnectionState == 'disconnected') {
-                self.closePeerConnection(peerUrl)
-            }
-        }
         return connection;
     }
 
