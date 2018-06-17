@@ -148,7 +148,7 @@ class MeshAdapter {
 
     disconnect() {
         if (this.closed) { return } else { this.closed = true }
-        this.closeSignalingServerConnection();
+        this.closeAllConnections();
     }
 
     shouldStartConnectionTo(clientId) {
@@ -162,7 +162,7 @@ class MeshAdapter {
     }
 
     closeStreamConnection(clientId) {
-        this.closerPeerConnection(clientId);
+        this.closePeerConnection(clientId);
     }
 
     getConnectStatus(clientId) {
@@ -235,7 +235,7 @@ class MeshAdapter {
         }
     }
 
-    closerPeerConnection(peerUrl) {
+    closePeerConnection(peerUrl) {
         const channel = this.channels.get(peerUrl)
         const connection = this.connections.get(peerUrl)
 
@@ -259,7 +259,7 @@ class MeshAdapter {
             this.connections.delete(peerUrl)
             this.signalingChannel.removeConnection(connection)
             connection.close()
-            this.debugLog('connection closed: ' + peerUrl)
+            console.log('connection closed: ' + peerUrl)
             this.debugLog('mesh adapter removed connection ' + peerUrl)
         }
     }
@@ -284,7 +284,7 @@ class MeshAdapter {
         const peerUrl = peer.peerUrl
 
         if (this.connections.has(peerUrl)) {
-            console.log('mesh adapter - send offer : already connected to peer: ' + peerUrl)
+            console.warn('mesh adapter - send offer : already connected to peer: ' + peerUrl)
             return
         }
 
@@ -324,11 +324,17 @@ class MeshAdapter {
         const self = this
 
         const connection = new self.RTCPeerConnectionImplementation(self.configuration)
-        this.debugLog('connection created: ' + peerUrl)
+        console.log('connection created: ' + peerUrl)
+
+        if (self.connections.has(peerUrl)) {
+            console.error('mesh adapter - create RTC peer connection: peer already connected: ' + peerUrl)
+            throw Error('peer already connected: ' + peerUrl);
+        }
+
         self.connections.set(peerUrl, connection)
         connection.oniceconnectionstatechange = function () {
             if (connection.iceConnectionState == 'disconnected') {
-                self.closeStreamConnection(peerUrl)
+                self.closePeerConnection(peerUrl)
             }
         }
         return connection;
@@ -356,7 +362,7 @@ class MeshAdapter {
         channel.onclose = () => {
             if (self.channels.has(peerUrl)) {
                 try {
-                    self.closeStreamConnection(peerUrl)
+                    self.closePeerConnection(peerUrl)
                     self.debugLog("channel " + channel.label + " closed")
                 } catch (error) {
                     console.warn("Error in onclose: " + error.message)
@@ -410,18 +416,18 @@ class MeshAdapter {
         }
 
         this.signalingChannel.onTargetNotFound = (signalingServerUrl, targetId) => {
-            this.closerPeerConnection(signalingServerUrl + '/' + targetId)
+            this.closePeerConnection(signalingServerUrl + '/' + targetId)
         }
     }
 
-    closeSignalingServerConnection() {
+    closeAllConnections() {
         const self = this
         console.log("mesh adapter - close all connections.")
 
         this.signalingChannel.close()
 
-        this.channels.forEach((channel, peerUrl) => {
-            self.closeStreamConnection(peerUrl)
+        this.connections.forEach((connection, peerUrl) => {
+            self.closePeerConnection(peerUrl)
         })
 
     }
@@ -487,7 +493,7 @@ class MeshAdapter {
             return
         }
 
-        console.log('mesh adapter - sending find changed peers to : ' + peerUrl)
+        this.debugLog('mesh adapter - sending find changed peers to : ' + peerUrl)
 
         const findChangedPeersMessage = new FindChangedPeersMessage(this.selfPeerData, 100);
         this.sendData(peerUrl, DataTypes.FIND_CHANGED_PEERS, findChangedPeersMessage)
@@ -506,7 +512,11 @@ class MeshAdapter {
 
         // Manager does not yet contain peer then add it to manager and notify
         if (!this.manager.peers.has(peer.url)) {
+            // Add changes to manager.
             const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [peer]);
+            // Flag changes known.
+            this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
+            // Notify changes.
             this.notifyPeersChanged(currentPeers);
         }
 
@@ -521,7 +531,7 @@ class MeshAdapter {
         // Find out which peers were actually changed from peer manager perspective
         const actualChangedPeers = this.manager.peekChangedPeers(this.selfPeerData.url, this.selfPeerData.position, 100, changedPeers.peers)
 
-        console.log('mesh adapter - process changed peers from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
+        console.log('mesh adapter - process changed peers self: ' + this.selfPeerUrl + ' from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
 
         // Send offer to all peers which became available.
         actualChangedPeers.forEach(peer => {
@@ -532,8 +542,6 @@ class MeshAdapter {
     }
 
     removePeer(peerUrl) {
-        if (this.closed) { return }
-
         // TODO Add mapping for foreign signaling servers
         // Do not remove self.
         if (this.selfPeers.has(peerUrl)) {
@@ -542,7 +550,7 @@ class MeshAdapter {
         }
 
         if (this.manager.peers.has(peerUrl)) {
-            console.log("mesh adapter - remove peer: " + peerUrl);
+            this.debugLog("mesh adapter - remove peer: " + peerUrl);
             const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [new PeerData(peerUrl, PeerStatus.UNAVAILABLE, new PeerPosition(0,0,0))]);
             this.notifyPeersChanged(currentPeers);
         }

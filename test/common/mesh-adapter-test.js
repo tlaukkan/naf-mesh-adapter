@@ -115,13 +115,17 @@ describe('mesh-adapter', function() {
             console.log('adapter 3 server connect failed')
         })
 
+        let isDone = false
         adapter3.setRoomOccupantListener((occupantMap) => {
             console.log('adapter 3 occupant change: ' + Object.keys(occupantMap).length)
             if (Object.keys(occupantMap).length === 2) {
                 adapter1.disconnect()
                 adapter2.disconnect()
                 adapter3.disconnect()
-                done()
+                if (!isDone) {
+                    done()
+                    isDone = true
+                }
             }
         })
 
