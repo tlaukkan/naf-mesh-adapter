@@ -259,7 +259,7 @@ class MeshAdapter {
             this.connections.delete(peerUrl)
             this.signalingChannel.removeConnection(connection)
             connection.close()
-            console.log('connection closed: ' + peerUrl)
+            this.debugLog('connection closed: ' + peerUrl)
             this.debugLog('mesh adapter removed connection ' + peerUrl)
         }
     }
@@ -303,7 +303,7 @@ class MeshAdapter {
         const peerUrl = signalinServerUrl + '/' + peerId
 
         if (this.connections.has(peerUrl)) {
-            console.log('mesh adapter - process offer : already connected to peer: ' + peerUrl)
+            this.debugLog('mesh adapter - process offer : already connected to peer: ' + peerUrl)
             return
         }
 
@@ -324,7 +324,7 @@ class MeshAdapter {
         const self = this
 
         const connection = new self.RTCPeerConnectionImplementation(self.configuration)
-        console.log('connection created: ' + peerUrl)
+        this.debugLog('connection created: ' + peerUrl)
 
         if (self.connections.has(peerUrl)) {
             console.error('mesh adapter - create RTC peer connection: peer already connected: ' + peerUrl)
@@ -422,7 +422,7 @@ class MeshAdapter {
 
     closeAllConnections() {
         const self = this
-        console.log("mesh adapter - close all connections.")
+        this.debugLog("mesh adapter - close all connections.")
 
         this.signalingChannel.close()
 
@@ -508,7 +508,7 @@ class MeshAdapter {
             return;
         }
 
-        console.log('mesh adapter - process find changed peers from : ' + peerUrl)
+        this.debugLog('mesh adapter - process find changed peers from : ' + peerUrl)
 
         // Manager does not yet contain peer then add it to manager and notify
         if (!this.manager.peers.has(peer.url)) {
@@ -531,7 +531,7 @@ class MeshAdapter {
         // Find out which peers were actually changed from peer manager perspective
         const actualChangedPeers = this.manager.peekChangedPeers(this.selfPeerData.url, this.selfPeerData.position, 100, changedPeers.peers)
 
-        console.log('mesh adapter - process changed peers self: ' + this.selfPeerUrl + ' from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
+        this.debugLog('mesh adapter - process changed peers self: ' + this.selfPeerUrl + ' from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
 
         // Send offer to all peers which became available.
         actualChangedPeers.forEach(peer => {
