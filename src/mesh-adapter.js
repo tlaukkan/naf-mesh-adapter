@@ -62,9 +62,9 @@ class MeshAdapter {
         this.debugLogPrefix = null
 
         // Primary signaling server URL for this client
-        this.primarySignalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com'
+        this.signalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com'
         // Client own peer URL formed from primary signaling server URL and self peer ID.
-        this.primarySelfPeerUrl = null
+        this.selfPeerUrl = null
         // First remote peer URL or null if this is first node in mesh. Change to array?
         this.serverPeerUrls = null
 
@@ -92,7 +92,7 @@ class MeshAdapter {
     // ### INTERFACE FUNCTIONS ###
 
     setSignalServerUrl(signalServerUrl) {
-        this.primarySignalingServerUrl = signalServerUrl
+        this.signalingServerUrl = signalServerUrl
     }
 
     setServerPeerUrls(serverPeerUrls) {
@@ -137,7 +137,7 @@ class MeshAdapter {
 
     disconnect() {
         if (this.closed) { return } else { this.closed = true }
-        this.closeAllConnections();
+        this.closeSignalingServerConnection();
     }
 
     shouldStartConnectionTo(clientId) {
@@ -281,7 +281,7 @@ class MeshAdapter {
         const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
         this.setupRtcDataChannel(channel, peerUrl);
 
-        await this.signalingChannel.offer(peer.primarySignalingServerUrl, peer.peerId, connection)
+        await this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection)
         this.debugLog('mesh adapter sent offer to ' + peerUrl)
     }
 
@@ -315,10 +315,8 @@ class MeshAdapter {
         this.debugLog('connection created: ' + peerUrl)
         self.connections.set(peerUrl, connection)
         connection.oniceconnectionstatechange = function () {
-            if (connection.iceConnectionState === "failed" ||
-                connection.iceConnectionState === "disconnected" ||
-                connection.iceConnectionState === "closed") {
-                    self.closerPeerConnection(peerUrl)
+            if (connection.iceConnectionState == 'disconnected') {
+                self.closeStreamConnection(peerUrl)
             }
         }
         return connection;
@@ -345,7 +343,7 @@ class MeshAdapter {
         channel.onclose = () => {
             if (self.channels.has(peerUrl)) {
                 try {
-                    self.closerPeerConnection(peerUrl)
+                    self.closeStreamConnection(peerUrl)
                     self.debugLog("channel " + channel.label + " closed")
                 } catch (error) {
                     console.warn("Error in onclose: " + error.message)
@@ -374,7 +372,7 @@ class MeshAdapter {
 
     openPrimarySignalingServerConnection() {
         const self = this
-        this.signalingChannel.addServer(this.primarySignalingServerUrl, this.email, this.secret, async (signalingServerUrl, selfPeerId) => {
+        this.signalingChannel.addServer(this.signalingServerUrl, this.email, this.secret, async (signalingServerUrl, selfPeerId) => {
             await this.processPrimarySignalingServerConnected(signalingServerUrl, selfPeerId);
         }, () => {
             this.processPrimarySignalingServerConnectFailed();
@@ -401,21 +399,21 @@ class MeshAdapter {
         }
     }
 
-    closeAllConnections() {
+    closeSignalingServerConnection() {
         const self = this
 
         this.channels.forEach((channel, peerUrl) => {
-            self.closerPeerConnection(peerUrl)
+            self.closeStreamConnection(peerUrl)
         })
         this.signalingChannel.close()
     }
 
     async processPrimarySignalingServerConnected(signalingServerUrl, selfPeerId) {
         const self = this
-        self.primarySelfPeerUrl = signalingServerUrl + '/' + selfPeerId
+        self.selfPeerUrl = signalingServerUrl + '/' + selfPeerId
 
         if (self.onServerConnected) {
-            self.onServerConnected(self.primarySelfPeerUrl);
+            self.onServerConnected(self.selfPeerUrl);
         }
 
         if (self.serverPeerUrls && self.serverPeerUrls.length > 3) {
@@ -489,12 +487,12 @@ class MeshAdapter {
 
         const self = this
         self.debugLog('received peer: ' + peerUrl)
-        if (peerUrl !== self.primarySelfPeerUrl) {
+        if (peerUrl !== self.selfPeerUrl) {
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.debugLog('setting up peer: ' + peerUrl)
                 self.broadcastPeer(peerUrl)
                 self.sendConnectedPeers(peerUrl)
-                self.sendOffer(new Peer(peerUrl), self.primarySelfPeerUrl).then().catch()
+                self.sendOffer(new Peer(peerUrl), self.selfPeerUrl).then().catch()
             }
         }
     }
