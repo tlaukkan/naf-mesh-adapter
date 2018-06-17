@@ -10,26 +10,43 @@ const DataMessage = require('./mesh-model').DataMessage
  */
 class MeshAdapter {
 
-    constructor(PeerConnection, WebSocketImplementation) {
-        if (PeerConnection) {
-            this.RTCPeerConnection = PeerConnection
+    constructor(RTCPeerConnectionImplementation, WebSocketImplementation) {
+        // Deduce WebRTC peer connection implementation.
+        if (RTCPeerConnectionImplementation) {
+            this.RTCPeerConnectionImplementation = RTCPeerConnectionImplementation
         } else {
-            this.RTCPeerConnection = RTCPeerConnection
+            this.RTCPeerConnectionImplementation = RTCPeerConnection
         }
 
+        // Deduce WebSocketImplementation
         if (WebSocketImplementation) {
-            this.WebSocket = WebSocketImplementation
+            this.WebSocketImplementation = WebSocketImplementation
         } else {
-            this.WebSocket = WebSocket
+            this.WebSocketImplementation = WebSocket
         }
 
-
+        // Boolean indicating if adapter has been opened.
         this.opened = false
+        // Boolean indicating if adapter has been closed.
         this.closed = false
         // The default app. Not in use currently.
         this.app = 'default'
         // The default room. Not in use currently.
         this.room = 'default';
+
+        // Callback for server connection success.
+        this.onServerConnectSuccess = null
+        // Callback for server connection failure.
+        this.onServerConnectFailure = null
+        // Callback for room occupants changed.
+        this.onRoomOccupantsChanged = null
+        // Callback for data connection open
+        this.onDataConnectionOpen = null
+        // Callback for data connection close
+        this.onDataConnectionClose = null
+        // Callback for data connection message received
+        this.onDataConnectionMessageReceived = null
+
 
         // WebRTC configuration
         this.configuration = {iceServers: [{urls: 'stun:stun1.l.google.com:19302'}]};
@@ -51,7 +68,7 @@ class MeshAdapter {
         this.serverPeerUrls = null
 
         // The signaling channel used for WebRTC signaling.
-        this.signalingChannel = new SignalingChannel(this.WebSocket)
+        this.signalingChannel = new SignalingChannel(this.WebSocketImplementation)
         // Map of own signaling server URLs and peer IDs
         this.selfSignalingServerUrlPeerIdMap = new Map()
         // Map of own peer URLs and peer objects
@@ -101,18 +118,18 @@ class MeshAdapter {
     }
 
     setServerConnectListeners(successListener, failureListener) {
-        this.connectSuccess = successListener;
-        this.connectFailure = failureListener;
+        this.onServerConnectSuccess = successListener;
+        this.onServerConnectFailure = failureListener;
     }
 
     setRoomOccupantListener(occupantListener) {
-        this.roomOccupantListener = occupantListener;
+        this.onRoomOccupantsChanged = occupantListener;
     }
 
     setDataChannelListeners(openListener, closedListener, messageListener) {
-        this.openListener = openListener;
-        this.closedListener = closedListener;
-        this.messageListener = messageListener;
+        this.onDataConnectionOpen = openListener;
+        this.onDataConnectionClose = closedListener;
+        this.onDataConnectionMessageReceived = messageListener;
     }
 
     connect() {
@@ -121,12 +138,10 @@ class MeshAdapter {
 
         this.opened = true
 
-        this.debugLog('--- mesh adapter connect ---')
-
         this.signalingChannel.addServer(this.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
             self.selfPeerUrl = signalServerUrl + '/' + selfPeerId
-            if (self.connectSuccess) {
-                self.connectSuccess(self.selfPeerUrl);
+            if (self.onServerConnectSuccess) {
+                self.onServerConnectSuccess(self.selfPeerUrl);
             }
             if (self.serverPeerUrls && self.serverPeerUrls.length > 3) {
                 self.serverPeerUrls.split(',').forEach(async serverPeerUrl => {
@@ -134,8 +149,8 @@ class MeshAdapter {
                 })
             }
         }, () => {
-            if (self.connectFailure) {
-                self.connectFailure();
+            if (self.onServerConnectFailure) {
+                self.onServerConnectFailure();
             }
         })
 
@@ -159,8 +174,6 @@ class MeshAdapter {
                 self.debugLog('mesh adapter disconnected from signaling server ' + selfPeerUrl)
             }
         }
-
-        this.debugLog('--- mesh adapter connect ---')
     }
 
     disconnect() {
@@ -177,9 +190,6 @@ class MeshAdapter {
     shouldStartConnectionTo(clientId) {
         if (this.closed) { return }
 
-        this.debugLog('--- mesh adapter should start connection to ---')
-        // return TRUE if connections does not yet have clientId
-        this.debugLog('--- mesh adapter should start connection to ---')
         return !this.connections.has(clientId)
     }
 
@@ -208,8 +218,8 @@ class MeshAdapter {
             channel.close()
             this.debugLog('channel closed: ' + clientId)
             this.debugLog('mesh adapter removed channel ' + clientId)
-            if (this.closedListener) {
-                this.closedListener(clientId);
+            if (this.onDataConnectionClose) {
+                this.onDataConnectionClose(clientId);
             }
         }
 
@@ -331,7 +341,7 @@ class MeshAdapter {
         if (self.connections.has(peerUrl)) {
             throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
         }
-        const connection = new self.RTCPeerConnection(self.configuration)
+        const connection = new self.RTCPeerConnectionImplementation(self.configuration)
         this.debugLog('connection created: ' + peerUrl)
         self.connections.set(peerUrl, connection)
         connection.oniceconnectionstatechange = function () {
@@ -350,8 +360,8 @@ class MeshAdapter {
 
         channel.onopen = () => {
             self.channels.set(peerUrl, channel)
-            if (self.openListener) {
-                self.openListener(peerUrl);
+            if (self.onDataConnectionOpen) {
+                self.onDataConnectionOpen(peerUrl);
             }
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.peers.set(peerUrl, true)
@@ -380,8 +390,8 @@ class MeshAdapter {
             if (dataType === 'PEER') {
                 this.processReceivedPeer(data);
             } else {
-                if (self.messageListener) {
-                    self.messageListener(from, dataType, data);
+                if (self.onDataConnectionMessageReceived) {
+                    self.onDataConnectionMessageReceived(from, dataType, data);
                 }
             }
 
@@ -391,7 +401,7 @@ class MeshAdapter {
     notifyOccupantsChanged() {
         if (this.closed) { return }
 
-        this.roomOccupantListener(Array.from(this.peers).reduce((obj, [key, value]) => (
+        this.onRoomOccupantsChanged(Array.from(this.peers).reduce((obj, [key, value]) => (
             Object.assign(obj, { [key]: value })
         ), {}))
     }
