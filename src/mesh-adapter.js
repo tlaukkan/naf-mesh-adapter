@@ -355,62 +355,48 @@ class MeshAdapter {
     }
 
     async sendOffer(peer, selfPeerUrl) {
-        if (this.closed) {
-            return
-        }
-
-        const self = this
-
-        if (self.connections.has(peer.peerUrl)) {
-            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
-        }
-
-        const connectionLabel = selfPeerUrl + ' -> ' + peer.peerUrl
-        const connection = new self.RTCPeerConnection(self.configuration)
-        this.debugLog('connection created: ' + peer.peerUrl)
-        self.connections.set(peer.peerUrl, connection)
-        connection.oniceconnectionstatechange = function() {
-            if(connection.iceConnectionState == 'disconnected') {
-                self.closeStreamConnection(peer.peerUrl)
-            }
-        }
+        if (this.closed) { return }
 
         const peerUrl = peer.peerUrl
-        const channel = connection.createDataChannel(connectionLabel);
+        const connection = this.createRTCPeerConnection(peerUrl);
 
+        const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
         this.setupChannel(channel, peerUrl);
 
-        await self.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection)
-        this.debugLog('mesh adapter sent offer to ' + peer.peerUrl)
+        await this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection)
+        this.debugLog('mesh adapter sent offer to ' + peerUrl)
     }
 
     acceptOffer(signalinServerUrl, peerId, offer) {
-        if (this.closed) {
-            return
-        }
+        if (this.closed) { return }
 
-        const self = this
         const peerUrl = signalinServerUrl + '/' + peerId
+        const connection = this.createRTCPeerConnection(peerUrl);
 
-        if (self.connections.has(peerUrl)) {
-            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
-        }
-
-        const connection = new self.RTCPeerConnection(self.configuration)
-        this.debugLog('connection created: ' + peerUrl)
-        self.connections.set(peerUrl, connection)
-        connection.oniceconnectionstatechange = function() {
-            if(connection.iceConnectionState == 'disconnected') {
-                self.closeStreamConnection(peerUrl)
-            }
-        }
-
-        this.debugLog('mesh adapter received offer from ' + peerUrl)
         connection.ondatachannel = (event) => {
             const channel = event.channel;
             this.setupChannel(channel, peerUrl);
         };
+
+        this.debugLog('mesh adapter accepted offer from ' + peerUrl)
+
         return connection
+    }
+
+    createRTCPeerConnection(peerUrl) {
+        const self = this
+        if (self.connections.has(peerUrl)) {
+            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
+        }
+        const connection = new self.RTCPeerConnection(self.configuration)
+        this.debugLog('connection created: ' + peerUrl)
+        self.connections.set(peerUrl, connection)
+        connection.oniceconnectionstatechange = function () {
+            if (connection.iceConnectionState == 'disconnected') {
+                self.closeStreamConnection(peerUrl)
+            }
+        }
+        return connection;
     }
 
     setupChannel(channel, peerUrl) {
