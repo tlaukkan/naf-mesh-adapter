@@ -429,7 +429,7 @@ class MeshAdapter {
         if (this.onServerConnectFailed) {
             this.onServerConnectFailed();
         }
-        console.log.error('mesh adapter:  primary signaling server connect failed.')
+        console.error('mesh adapter:  primary signaling server connect failed.')
     }
 
     processSignalingServerConnected(signalingServerUrl, selfPeerId) {
@@ -441,7 +441,7 @@ class MeshAdapter {
     }
 
     processSignalingServerConnectFailed(signalingServerUrl) {
-        console.log.error('mesh adapter: connect to signaling server failed: ' + signalingServerUrl)
+        console.error('mesh adapter: connect to signaling server failed: ' + signalingServerUrl)
     }
 
     processSignalingServerDisconnected(signalingServerUrl) {
