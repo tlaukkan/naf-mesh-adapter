@@ -85,8 +85,6 @@ class MeshAdapter {
         this.connections = new Map()
         // Map of peer URL and RTC Data Channels
         this.channels = new Map()
-        // Map of peer URLs and true or false indicating connection status
-        this.peers = new Map();
 
         this.position = new PeerPosition(0,0,0);
 
@@ -239,10 +237,6 @@ class MeshAdapter {
         const channel = this.channels.get(peerUrl)
         const connection = this.connections.get(peerUrl)
 
-        /*if (this.peers.has(peerUrl) && this.peers.get(peerUrl)) {
-            this.peers.set(peerUrl, false)
-            this.notifyOccupantsChanged()
-        }*/
         this.removePeer(peerUrl)
 
         if (channel) {
@@ -341,9 +335,6 @@ class MeshAdapter {
             self.channels.set(peerUrl, channel)
             if (self.onDataConnectionOpened) {
                 self.onDataConnectionOpened(peerUrl);
-            }
-            if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
-                self.peers.set(peerUrl, true)
             }
             self.findChangedPeers(peerUrl)
             self.debugLog("channel " + channel.label + " opened")
