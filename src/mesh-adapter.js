@@ -344,10 +344,8 @@ class MeshAdapter {
             }
             if (!self.peers.has(peerUrl) || !self.peers.get(peerUrl)) {
                 self.peers.set(peerUrl, true)
-                //self.broadcastPeer(peerUrl)
-                //self.notifyOccupantsChanged()
-                self.findChangedPeers(peerUrl)
             }
+            self.findChangedPeers(peerUrl)
             self.debugLog("channel " + channel.label + " opened")
         };
         channel.onclose = () => {
