@@ -279,11 +279,13 @@ class MeshAdapter {
 
         const connection = this.getRtcPeerConnection(peerUrl);
 
-        const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
-        this.setupRtcDataChannel(channel, peerUrl);
+        if (connection) {
+            const channel = connection.createDataChannel(selfPeerUrl + ' -> ' + peerUrl);
+            this.setupRtcDataChannel(channel, peerUrl);
 
-        this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection).then().catch()
-        this.debugLog('mesh adapter sent offer to ' + peerUrl)
+            this.signalingChannel.offer(peer.signalingServerUrl, peer.peerId, connection).then().catch()
+            this.debugLog('mesh adapter sent offer to ' + peerUrl)
+        }
     }
 
     processOffer(signalinServerUrl, peerId, offer) {
@@ -293,12 +295,14 @@ class MeshAdapter {
 
         const connection = this.getRtcPeerConnection(peerUrl);
 
-        connection.ondatachannel = (event) => {
-            const channel = event.channel;
-            this.setupRtcDataChannel(channel, peerUrl);
-        };
+        if (connection) {
+            connection.ondatachannel = (event) => {
+                const channel = event.channel;
+                this.setupRtcDataChannel(channel, peerUrl);
+            };
 
-        this.debugLog('mesh adapter accepted offer from ' + peerUrl)
+            this.debugLog('mesh adapter accepted offer from ' + peerUrl)
+        }
 
         return connection
     }
@@ -309,8 +313,7 @@ class MeshAdapter {
 
         let connection
         if (self.connections.has(peerUrl)) {
-            connection = self.connections.get(peerUrl)
-            console.info('mesh adapter - create RTC peer connection: peer already connected: ' + peerUrl)
+            return null;
         } else {
             connection = new self.RTCPeerConnectionImplementation(self.configuration)
             self.connections.set(peerUrl, connection)
