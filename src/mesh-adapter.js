@@ -394,8 +394,8 @@ class MeshAdapter {
             this.processSignalingServerDisconnected(signalingServerUrl);
         }
 
-        this.signalingChannel.onTargetNotFound = (targetId) => {
-            this.closerPeerConnection(targetId)
+        this.signalingChannel.onTargetNotFound = (signalingServerUrl, targetId) => {
+            this.closerPeerConnection(signalingServerUrl + '/' + targetId)
         }
     }
 
