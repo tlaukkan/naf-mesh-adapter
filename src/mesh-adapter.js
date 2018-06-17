@@ -360,6 +360,11 @@ class MeshAdapter {
         }
 
         const self = this
+
+        if (self.connections.has(peer.peerUrl)) {
+            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
+        }
+
         const connectionLabel = selfPeerUrl + ' -> ' + peer.peerUrl
         const connection = new self.RTCPeerConnection(self.configuration)
         this.debugLog('connection created: ' + peer.peerUrl)
@@ -386,6 +391,11 @@ class MeshAdapter {
 
         const self = this
         const peerUrl = signalinServerUrl + '/' + peerId
+
+        if (self.connections.has(peerUrl)) {
+            throw Error('mesh adapter - accept offer : already connected to peer: ' + peerUrl)
+        }
+
         const connection = new self.RTCPeerConnection(self.configuration)
         this.debugLog('connection created: ' + peerUrl)
         self.connections.set(peerUrl, connection)
