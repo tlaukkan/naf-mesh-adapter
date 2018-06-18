@@ -294,7 +294,6 @@ class MeshAdapter {
         const peerUrl = signalinServerUrl + '/' + peerId
 
         const connection = this.getRtcPeerConnection(peerUrl);
-
         if (connection) {
             connection.ondatachannel = (event) => {
                 const channel = event.channel;
@@ -313,19 +312,22 @@ class MeshAdapter {
 
         let connection
         if (self.connections.has(peerUrl)) {
+            console.warn('rtc peer connect collision with, disconnecting: ' + peerUrl)
+            this.closePeerConnection(peerUrl);
             return null;
         } else {
             connection = new self.RTCPeerConnectionImplementation(self.configuration)
             self.connections.set(peerUrl, connection)
             connection.oniceconnectionstatechange = function () {
-                if (connection.iceConnectionState == 'disconnected') {
+                if (connection.iceConnectionState == 'disconnected' ||
+                    connection.iceConnectionState == 'failed' ||
+                    connection.iceConnectionState == 'closed') {
                     self.closePeerConnection(peerUrl)
                 }
             }
-            this.debugLog('connection created: ' + peerUrl)
+            return connection;
         }
 
-        return connection;
     }
 
     setupRtcDataChannel(channel, peerUrl) {
