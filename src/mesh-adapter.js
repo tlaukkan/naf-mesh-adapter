@@ -237,13 +237,14 @@ class MeshAdapter {
         const channel = this.channels.get(peerUrl)
         const connection = this.connections.get(peerUrl)
 
+        this.debugLog('mesh adapter - close peer connection - closing...' + peerUrl)
+
         this.removePeer(peerUrl)
 
         if (channel) {
             this.channels.delete(peerUrl)
             channel.close()
-            this.debugLog('channel closed: ' + peerUrl)
-            this.debugLog('mesh adapter removed channel ' + peerUrl)
+            this.debugLog('mesh adapter - close peer connection - closed channel' + peerUrl)
             if (this.onDataConnectionClosed) {
                 this.onDataConnectionClosed(peerUrl);
             }
@@ -253,8 +254,7 @@ class MeshAdapter {
             this.connections.delete(peerUrl)
             this.signalingChannel.removeConnection(connection)
             connection.close()
-            this.debugLog('connection closed: ' + peerUrl)
-            this.debugLog('mesh adapter removed connection ' + peerUrl)
+            this.debugLog('mesh adapter - close peer connection - removed connection ' + peerUrl)
         }
     }
 
