@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Iframe Dev Example — Networked-Aframe</title>
-  <meta name="description" content="Iframe Example — Networked-Aframe">
-
-  <style>
-    iframe { width: 50%; height: 100%; border-width: 0 10px 10px 0; }
-
-    .left { position: absolute; top: 0; left: 0; }
-    .right { position: absolute; top: 0; right: 0; }
-  </style>
+    <title>A-Frame Mesh Adapter Demo</title>
+    <meta name="description" content="Hello, WebVR! - A-Frame">
+    <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+    <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>
+    <script src="bundle.js"></script>
 </head>
 <body>
-
-<iframe class="left" src="adapter-test-send.html"></iframe>
-<iframe class="right" src="adapter-test-receive.html"></iframe>
-
+<a-scene networked-scene="room: dev; debug: true; adapter: mesh;">
+    <a-entity environment="lightPosition: 1 5 -2; groundTexture: walkernoise; groundColor: #00A86B; groundColor2: #2E8B57; skyType: gradient; skyColor: #1d7444; horizonColor: #7ae0e0;"></a-entity>
+    <a-text value="Peer 1" position="0 1.4 0" align="center"></a-text>
+    <a-entity position="0 1 0">  <!-- Grandparent entity -->
+        <a-animation
+                attribute="rotation"
+                easing="linear"
+                dur="30000"
+                to="360 720 1080"
+                repeat="indefinite">
+        </a-animation>
+        <a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+    </a-entity>
+    <a-sky color="#ECECEC"></a-sky>
+</a-scene>
 </body>
 </html>

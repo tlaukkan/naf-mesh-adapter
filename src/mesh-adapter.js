@@ -90,9 +90,9 @@ class MeshAdapter {
 
         //TODO Remove hack added for adapter test page
         if (typeof (document) !== 'undefined') {
-            this.email = document.title
-            this.secret = document.title
-            this.debugLogPrefix = document.title
+            //this.email = document.title
+            //this.secret = document.title
+            //this.debugLogPrefix = document.title
         }
 
         this.manager = new PeerManager();
@@ -277,6 +277,8 @@ class MeshAdapter {
 
         const peerUrl = peer.peerUrl
 
+        this.debugLog('mesh adapter - send offer: ' + peerUrl)
+
         const connection = this.getRtcPeerConnection(peerUrl);
 
         if (connection) {
@@ -292,6 +294,8 @@ class MeshAdapter {
         if (this.closed) { return }
 
         const peerUrl = signalinServerUrl + '/' + peerId
+
+        this.debugLog('mesh adapter - send offer: ' + peerUrl)
 
         const connection = this.getRtcPeerConnection(peerUrl);
         if (connection) {
@@ -514,6 +518,7 @@ class MeshAdapter {
         if (this.closed) { return }
 
         // Find out which peers were actually changed from peer manager perspective
+
         const actualChangedPeers = this.manager.peekChangedPeers(this.selfPeerData.url, this.selfPeerData.position, 100, changedPeers.peers)
 
         this.debugLog('mesh adapter - process changed peers self: ' + this.selfPeerUrl + ' from : ' + peerUrl + ' ' + JSON.stringify(actualChangedPeers))
@@ -521,7 +526,11 @@ class MeshAdapter {
         // Send offer to all peers which became available.
         actualChangedPeers.forEach(peer => {
             if (peer.status == PeerStatus.AVAILABLE) {
-                this.sendOffer(new Peer(peer.url), this.selfPeerUrl).then().catch()
+                if (!this.connections.has(peer.url)) {
+                    this.sendOffer(new Peer(peer.url), this.selfPeerUrl).then().catch()
+                } else {
+                    this.debugLog('mesh adapter - process changed peers: peer rtc peer connection exists: ' + peerUrl)
+                }
             }
         });
     }
@@ -544,6 +553,7 @@ class MeshAdapter {
     notifyPeersChanged(peers) {
         const peerMap = new Map()
         peers.forEach(peer => { peerMap.set(peer.url, peer.status === PeerStatus.AVAILABLE) });
+        console.log("Peers changed: " + peerMap.size)
         this.onRoomOccupantsChanged(Array.from(peerMap).reduce((obj, [key, value]) => ( Object.assign(obj, {[key]: value}) ), {}));
     }
 
