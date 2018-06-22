@@ -2,17 +2,17 @@
 <html>
 <head>
     <title>A-Frame Mesh Adapter Demo</title>
-    <meta name="description" content="Hello, WebVR! - A-Frame">
+    <meta name="description" content="Hello, WebVR! - Networked A-Frame Mesh Networking Demo">
     <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
-    <script src="networked-aframe.js"></script>
-<!--    <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>-->
-    <script src="atmosphere.js"></script>
+    <script src="https://unpkg.com/@tlaukkan/networked-aframe@0.6.1/dist/networked-aframe.js"></script>
+    <script src="https://unpkg.com/@tlaukkan/aframe-atmosphere-component@0.0.2/atmosphere.js"></script>
     <script src="bundle.js"></script>
+
 </head>
 <body>
 <script>
     NAF.options.updateRate = 10
-    NAF.options.debug = true
+    NAF.options.debug = false
 </script>
 
 <a-scene fog="type: exponential; color: #F6E8BD; far: 500; density: 0.05; " networked-scene="room: dev; debug: true; adapter: mesh; serverURL: wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c;">
@@ -54,9 +54,10 @@
         </template>
     </a-assets>
 
-    <a-entity id="atmosphere" atmosphere="preset: default; active: true; seed: 1; lightPosition: 1 5 -2; skyType: atmosphere; skyColor: #1d7444; horizonColor: #7ae0e0;">
-        <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="1 5 -2"></a-entity>
-        <a-entity light="type: ambient; color: #555555"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="1 5 -2"></a-entity>
+    <a-entity light="type: ambient; color: #555555"></a-entity>
+
+    <a-entity id="atmosphere" atmosphere="lightPosition: 1 5 -2;">
         <a-plane color="#E6D8AD" height="1000" width="1000" rotation="-90 0 0"></a-plane>
     </a-entity>
 
@@ -70,11 +71,11 @@
 
 <script>
     var player = document.getElementById('player');
-    var environment = document.getElementById('environment');
+    var atmosphere = document.getElementById('atmosphere');
     setInterval(() => {
         var position = player.getAttribute('position')
         if (position) {
-            environment.setAttribute('position', {x: position.x, y: position.y - 1.5, z: position.z})
+            atmosphere.setAttribute('position', {x: position.x, y: position.y - 1.5, z: position.z})
         }
     }, 1000);
 </script>

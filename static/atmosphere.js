@@ -1,31 +1,21 @@
 /* global AFRAME, THREE */
 
-// Stripped down to contain only sky functions: https://github.com/feiss/aframe-environment-component
+// Stripped down to contain only sky functions from : https://github.com/feiss/aframe-environment-component
 
 if (typeof AFRAME === 'undefined') {
     throw new Error('Component attempted to register before AFRAME was available.');
 }
 
 AFRAME.registerComponent('atmosphere', {
+
     schema: {
-        active: {default: false},
-        preset: {default: 'default', oneOf: ['none', 'default', 'contact', 'egypt', 'checkerboard', 'forest', 'goaland', 'yavapai', 'goldmine', 'arches', 'threetowers', 'poison', 'tron', 'japan', 'dream', 'volcano', 'starry', 'osiris']},
-        seed: {type: 'int', default: 1, min: 0, max: 1000},
-
-        skyType: {default: 'color', oneOf:['none', 'color', 'gradient', 'atmosphere']},
-        skyColor: {default: '#88c', type: 'color'},
+        skyType: {default: 'atmosphere', oneOf:['none', 'color', 'gradient', 'atmosphere']},
+        skyColor: {default: '#1d7444', type: 'color'},
         horizonColor: {default: '#1d7444', type: 'color'},
-
         lightPosition: {type:'vec3', default: {x: 0, y: 1, z: -0.2}},
-
     },
 
     multiple: false,
-
-    presets: {
-        'none' : {},
-        'default' : {skyColor: '#88c'},
-    },
 
     init: function () {
         // stage ground diameter (and sky radius)
@@ -35,7 +25,6 @@ AFRAME.registerComponent('atmosphere', {
         this.sky = document.createElement('a-sky');
         this.sky.setAttribute('radius', this.STAGE_SIZE);
         this.sky.setAttribute('theta-length', 110);
-        this.sky.classList.add('environment');
 
         // stars are created when needed
         this.stars = null;
@@ -44,31 +33,10 @@ AFRAME.registerComponent('atmosphere', {
     },
 
     update: function (oldData) {
-        // preset changed
-        if (!oldData || !oldData.seed) {
-            var newData = Object.assign({}, this.presets[this.data.preset]);
-            Object.assign({}, this.el.components.atmosphere.attrValue);
-            this.el.setAttribute('atmosphere', newData);
-            if (oldData) { return; } else { oldData = {}; }
-        }
-
         var skyType = this.data.skyType;
         var sunPos = new THREE.Vector3(this.data.lightPosition.x, this.data.lightPosition.y, this.data.lightPosition.z);
         sunPos.normalize();
 
-        // update light colors and intensities
-        if (this.sunlight) {
-            this.sunlight.setAttribute('position', this.data.lightPosition);
-            if (skyType != 'atmosphere') {
-                // dim down the sky color for the light
-                var skycol = new THREE.Color(this.data.skyColor);
-                skycol.r = (skycol.r + 1.0) / 2.0;
-                skycol.g = (skycol.g + 1.0) / 2.0;
-                skycol.b = (skycol.b + 1.0) / 2.0;
-            }
-        }
-
-        // update sky colors
         if (skyType != oldData.skyType ||
             this.data.skyColor != oldData.skyColor ||
             this.data.horizonColor != oldData.horizonColor) {
@@ -91,15 +59,12 @@ AFRAME.registerComponent('atmosphere', {
             this.sky.setAttribute('material', mat);
         }
 
-        // set atmosphere sun position and stars
         if (skyType == 'atmosphere') {
             this.sky.setAttribute('material', {'sunPosition': sunPos});
             this.setStars((1 - Math.max(0, (sunPos.y + 0.08) * 8)) * 2000 );
         }
 
         this.sky.setAttribute('visible', skyType !== 'none');
-
-        this.el.setAttribute('visible', this.data.active);
 
     },
 
@@ -140,6 +105,7 @@ AFRAME.registerComponent('atmosphere', {
         numStars = Math.floor(Math.min(2000, Math.max(0, numStars)));
         this.stars.getObject3D('mesh').geometry.setDrawRange(0, numStars);
     }
+
 });
 
 // atmosphere sky shader. From https://github.com/aframevr/aframe/blob/master/examples/test/shaders/shaders/sky.js
