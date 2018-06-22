@@ -26,17 +26,36 @@
                             to="360 720 1080"
                             repeat="indefinite">
                     </a-animation>
-                    <a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+                    <a-tetrahedron color="#ADD8E6" radius="0.2" rotation="0 0 60" material="opacity: 0.5; transparent: true"></a-tetrahedron>
+                </a-entity>
+            </a-entity>
+        </template>
+        <template id="client-peer-template">
+            <a-entity>
+                <a-entity>
+                    <a-animation
+                            attribute="rotation"
+                            easing="linear"
+                            dur="30000"
+                            to="360 720 1080"
+                            repeat="indefinite">
+                    </a-animation>
+                    <a-tetrahedron color="#ADD8E6" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
                 </a-entity>
             </a-entity>
         </template>
     </a-assets>
 
-    <a-entity environment="lightPosition: 1 5 -2; groundTexture: checkerboard; groundColor: #00A86B; groundColor2: #2E8B57; skyType: gradient; skyColor: #1d7444; horizonColor: #7ae0e0;"></a-entity>
+    <a-entity id="environment" environment="lighting: none; lightPosition: 1 5 -2; ground: none; fog: none; groundTexture: none; groundColor: #FFFFFF; groundColor2: #FFFFFF; horizonColor: #7ae0e0;">
+        <a-plane color="#DDDDDD" height="1000" width="1000" rotation="-90 0 0"></a-plane>
+    </a-entity>
+
+    <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="1 5 -2"></a-entity>
+    <a-entity light="type: ambient; color: #555555"></a-entity>
 
     <!--<a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>-->
 
-    <a-entity id="adapter" networked="template:#server-peer-template;attachTemplateToLocal:true;" position="0 1 0">
+    <a-entity id="adapter" networked="template:#client-peer-template;attachTemplateToLocal:true;" position="0 1 0">
         <a-animation
                 attribute="rotation"
                 easing="linear"
@@ -50,5 +69,17 @@
     </a-entity>
 
 </a-scene>
+
+<script>
+    var player = document.getElementById('player');
+    var environment = document.getElementById('environment');
+    setInterval(() => {
+        var position = player.getAttribute('position')
+        if (position) {
+            environment.setAttribute('position', {x: position.x, y: position.y - 1.5, z: position.z})
+        }
+    }, 1000);
+</script>
+
 </body>
 </html>
