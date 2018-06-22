@@ -16,9 +16,18 @@
 
 <a-scene networked-scene="room: dev; debug: true; adapter: mesh; serverURL: wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c;">
     <a-assets>
-        <template id="adapter-template">
+        <template id="server-peer-template">
             <a-entity>
-                <a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+                <a-entity>
+                    <a-animation
+                            attribute="rotation"
+                            easing="linear"
+                            dur="30000"
+                            to="360 720 1080"
+                            repeat="indefinite">
+                    </a-animation>
+                    <a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+                </a-entity>
             </a-entity>
         </template>
     </a-assets>
@@ -27,7 +36,7 @@
 
     <!--<a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>-->
 
-    <a-entity id="adapter" networked="template:#adapter-template;attachTemplateToLocal:true;" position="0 1 0">
+    <a-entity id="adapter" networked="template:#server-peer-template;attachTemplateToLocal:true;" position="0 1 0">
         <a-animation
                 attribute="rotation"
                 easing="linear"

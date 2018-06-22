@@ -228,22 +228,6 @@ class MeshAdapter {
         }
     }
 
-    // TODO Remove delayed sending done for naf adapter testing page.
-    async delayedOpenPeerConnection(peerUrl) {
-        if (this.closed) { return }
-
-        const peer = new Peer(peerUrl)
-        if (this.signalingChannel.clients.has(peer.signalingServerUrl)) {
-            const selfPeerId = this.selfSignalingServerUrlPeerIdMap.get(peer.signalingServerUrl)
-            const selfPeerUrl = peer.signalingServerUrl + '/' + selfPeerId
-            await this.delayedSendOffer(peer, selfPeerUrl);
-        } else {
-            this.signalingChannel.addServer(peer.signalingServerUrl, this.email, this.secret, async (signalServerUrl, selfPeerId) => {
-                await this.delayedSendOffer(peer, signalServerUrl + '/' + selfPeerId);
-            })
-        }
-    }
-
     closePeerConnection(peerUrl) {
         const channel = this.channels.get(peerUrl)
         const connection = this.connections.get(peerUrl)
@@ -266,19 +250,6 @@ class MeshAdapter {
             this.signalingChannel.removeConnection(connection)
             connection.close()
             this.debugLog('mesh adapter - close peer connection - removed connection ' + peerUrl)
-        }
-    }
-
-    // TODO Remove delayed sending done for naf adapter testing page.
-    async delayedSendOffer(peer, selfPeerUrl) {
-        if (this.closed) { return }
-
-        if (this.debugLogPrefix === "Sender") {
-            setTimeout(async () => {
-                await this.sendOffer(peer, selfPeerUrl);
-            }, 1000)
-        } else {
-            await this.sendOffer(peer, selfPeerUrl);
         }
     }
 
@@ -434,7 +405,7 @@ class MeshAdapter {
 
         if (this.serverPeerUrls && this.serverPeerUrls.length > 3) {
             this.serverPeerUrls.split(',').forEach(async serverPeerUrl => {
-                await this.delayedOpenPeerConnection(serverPeerUrl);
+                await this.openPeerConnection(serverPeerUrl);
             })
         }
 
