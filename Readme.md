@@ -6,7 +6,7 @@ This project aims to provide networked A-Frame peer to peer mesh adapter.
 
 Demo of the mesh networking setup with two server peers:
 
-Rotating blue tetrahedrons are the server peer avatars you received from them.
+Rotating blue tetrahedrons are the server peer avatars.
 
 Green tetrahedrons are player avatars.
 
