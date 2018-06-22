@@ -5,12 +5,12 @@
     <meta name="description" content="Hello, WebVR! - A-Frame">
     <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
     <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>
-    <script src="https://unpkg.com/networked-aframe@0.6.1/dist/networked-aframe.min.js"></script>
+    <script src="networked-aframe.js"></script>
     <script src="bundle.js"></script>
 </head>
 <body>
 <script>
-    NAF.options.updateRate = 1
+    NAF.options.updateRate = 10
     NAF.options.debug = true
 </script>
 
@@ -27,7 +27,7 @@
 
     <!--<a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>-->
 
-    <a-entity id="adapter" networked="template:#adapter-template;attachTemplateToLocal:true;">
+    <a-entity id="adapter" networked="template:#adapter-template;attachTemplateToLocal:true;" position="0 0 0">
         <a-animation
                 attribute="rotation"
                 easing="linear"

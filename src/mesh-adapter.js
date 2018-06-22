@@ -346,9 +346,6 @@ class MeshAdapter {
 
         channel.onopen = () => {
             self.channels.set(peerUrl, channel)
-            if (self.onDataConnectionOpened) {
-                self.onDataConnectionOpened(peerUrl);
-            }
             self.findChangedPeers(peerUrl)
             self.debugLog("channel " + channel.label + " opened")
         };
@@ -511,7 +508,11 @@ class MeshAdapter {
             // Flag changes known.
             this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
             // Notify changes.
-            this.notifyPeersChanged(currentPeers); // Add timed delay to give remote peer time to
+            this.notifyPeersChanged(currentPeers);
+            if (this.onDataConnectionOpened) {
+                this.onDataConnectionOpened(peer.url);
+            }
+
         }
 
         // Send changed peers to back to the peer.
