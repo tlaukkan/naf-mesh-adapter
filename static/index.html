@@ -41,7 +41,14 @@
                             to="360 720 1080"
                             repeat="indefinite">
                     </a-animation>
-                    <a-tetrahedron color="#ADD8E6" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+                    <a-tetrahedron color="#E6D8AD" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
+                </a-entity>
+            </a-entity>
+        </template>
+            <template id="avatar-template">
+            <a-entity>
+                <a-entity>
+                    <a-tetrahedron color="#ADE6AD" radius="0.2" rotation="60 0 -45" material="opacity: 0.7; transparent: true"></a-tetrahedron>
                 </a-entity>
             </a-entity>
         </template>
@@ -54,16 +61,9 @@
     </a-entity>
 
     <a-entity id="adapter" networked="template:#client-peer-template;attachTemplateToLocal:true;" position="0 1 0">
-        <a-animation
-                attribute="rotation"
-                easing="linear"
-                dur="30000"
-                to="360 720 1080"
-                repeat="indefinite">
-        </a-animation>
     </a-entity>
 
-    <a-entity id="player" camera wasd-controls look-controls position="0 1.5 5">
+    <a-entity id="player" camera wasd-controls look-controls networked="template:#avatar-template;attachTemplateToLocal:true;" position="0 1.5 5">
     </a-entity>
 
 </a-scene>
