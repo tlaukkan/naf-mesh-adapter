@@ -69,7 +69,7 @@ class MeshAdapter {
         this.debugLogPrefix = null
 
         // Primary signaling server URL for this client
-        this.signalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com'
+        this.signalingServerUrl = null
         // Client own peer URL formed from primary signaling server URL and self peer ID.
         this.selfPeerUrl = null
         // First remote peer URL or null if this is first node in mesh. Change to array?
@@ -106,10 +106,17 @@ class MeshAdapter {
 
     setServerPeerUrls(serverPeerUrls) {
         this.serverPeerUrls = serverPeerUrls
+        const serverPeelUrlArray = this.serverPeerUrls.split(',')
+        if (!this.signalingServerUrl && serverPeelUrlArray.length > 0) {
+            this.signalingServerUrl = new Peer(serverPeelUrlArray[0]).signalingServerUrl;
+            console.log('No signaling server URL set. Setting signaling server URL from first server peer URL: ' + this.signalingServerUrl)
+        }
     }
 
     setServerUrl(serverPeerUrl) {
-        if (serverPeerUrl) { this.serverPeerUrls = serverPeerUrl; }
+        if (serverPeerUrl) {
+            this.setServerPeerUrls(serverPeerUrl)
+        }
     }
 
     setApp(appName) {
@@ -141,6 +148,10 @@ class MeshAdapter {
 
     connect() {
         if (this.connected) { throw Error('mesh adapter - connect: already connected.') } else { this.connected = true }
+        if (this.signalingServerUrl == null) {
+            this.signalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com';
+            console.log('No server peerl URL nor signaling server URL set. Setting default siganling server URL: ' + this.signalingServerUrl)
+        }
         this.openPrimarySignalingServerConnection();
     }
 
