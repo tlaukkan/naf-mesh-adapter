@@ -4,8 +4,9 @@
     <title>A-Frame Mesh Adapter Demo</title>
     <meta name="description" content="Hello, WebVR! - A-Frame">
     <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
-    <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>
     <script src="networked-aframe.js"></script>
+<!--    <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>-->
+    <script src="atmosphere.js"></script>
     <script src="bundle.js"></script>
 </head>
 <body>
@@ -14,7 +15,7 @@
     NAF.options.debug = true
 </script>
 
-<a-scene fog="type: exponential; color: #FFF; far: 500; density: 0.05; " networked-scene="room: dev; debug: true; adapter: mesh; serverURL: wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c;">
+<a-scene fog="type: exponential; color: #DDD; far: 500; density: 0.05; " networked-scene="room: dev; debug: true; adapter: mesh; serverURL: wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c;">
     <a-assets>
         <template id="server-peer-template">
             <a-entity>
@@ -46,14 +47,11 @@
         </template>
     </a-assets>
 
-    <!--<a-entity id="environment" environment="lighting: none; lightPosition: 1 5 -2; ground: none; fog: none; groundTexture: none; groundColor: #FFFFFF; groundColor2: #FFFFFF; horizonColor: #7ae0e0;">
-    </a-entity>-->
-
-    <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="1 5 -2"></a-entity>
-    <a-entity light="type: ambient; color: #555555"></a-entity>
-    <a-plane color="#DDDDDD" height="1000" width="1000" rotation="-90 0 0"></a-plane>
-
-    <!--<a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>-->
+    <a-entity id="atmosphere" atmosphere="preset: default; active: true; seed: 1; lightPosition: 1 5 -2; skyType: atmosphere; skyColor: #1d7444; horizonColor: #7ae0e0;">
+        <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="1 5 -2"></a-entity>
+        <a-entity light="type: ambient; color: #555555"></a-entity>
+        <a-plane color="#FFFFFF" height="1000" width="1000" rotation="-90 0 0"></a-plane>
+    </a-entity>
 
     <a-entity id="adapter" networked="template:#client-peer-template;attachTemplateToLocal:true;" position="0 1 0">
         <a-animation
@@ -73,12 +71,12 @@
 <script>
     var player = document.getElementById('player');
     var environment = document.getElementById('environment');
-    /*setInterval(() => {
+    setInterval(() => {
         var position = player.getAttribute('position')
         if (position) {
             environment.setAttribute('position', {x: position.x, y: position.y - 1.5, z: position.z})
         }
-    }, 1000);*/
+    }, 1000);
 </script>
 
 </body>
