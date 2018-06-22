@@ -5,14 +5,29 @@
     <meta name="description" content="Hello, WebVR! - A-Frame">
     <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
     <script src="https://rawgit.com/feiss/aframe-environment-component/master/dist/aframe-environment-component.min.js"></script>
-    <script src="https://unpkg.com/networked-aframe/dist/networked-aframe.min.js"></script>
+    <script src="https://unpkg.com/networked-aframe@0.6.1/dist/networked-aframe.min.js"></script>
     <script src="bundle.js"></script>
 </head>
 <body>
+<script>
+    NAF.options.updateRate = 1
+    NAF.options.debug = true
+</script>
+
 <a-scene networked-scene="room: dev; debug: true; adapter: mesh; serverURL: wss://tlaukkan-webrtc-signaling.herokuapp.com/31980bbf28e4b66e72ab49bebeb20da4f67a090c514d56c549f26caaf65a076c;">
-    <a-entity environment="lightPosition: 1 5 -2; groundTexture: walkernoise; groundColor: #00A86B; groundColor2: #2E8B57; skyType: gradient; skyColor: #1d7444; horizonColor: #7ae0e0;"></a-entity>
-    <a-text value="Peer 1" position="0 1.4 0" align="center"></a-text>
-    <a-entity position="0 1 0" networked="">  <!-- Grandparent entity -->
+    <a-assets>
+        <template id="adapter-template">
+            <a-entity>
+                <a-box radius="1"></a-box>
+            </a-entity>
+        </template>
+    </a-assets>
+
+    <a-entity environment="lightPosition: 1 5 -2; groundTexture: checkerboard; groundColor: #00A86B; groundColor2: #2E8B57; skyType: gradient; skyColor: #1d7444; horizonColor: #7ae0e0;"></a-entity>
+
+    <!--<a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>-->
+
+    <a-entity id="adapter" networked="template:#adapter-template;attachTemplateToLocal:true;">
         <a-animation
                 attribute="rotation"
                 easing="linear"
@@ -20,9 +35,11 @@
                 to="360 720 1080"
                 repeat="indefinite">
         </a-animation>
-        <a-tetrahedron color="#29AB87" radius="0.2" rotation="0 0 60" material="opacity: 0.7; transparent: true"></a-tetrahedron>
     </a-entity>
-    <a-sky color="#ECECEC"></a-sky>
+
+    <a-entity id="player" camera wasd-controls look-controls position="0 1.5 5">
+    </a-entity>
+
 </a-scene>
 </body>
 </html>

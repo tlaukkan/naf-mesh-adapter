@@ -196,6 +196,10 @@ class MeshAdapter {
         this.broadcastData(dataType, data)
     }
 
+    getServerTime() {
+        return Date.now()
+    }
+
     // ### INTERNAL FUNCTIONS ###
 
     openPeerConnection(peerUrl) {
@@ -371,6 +375,7 @@ class MeshAdapter {
                 self.processChangedPeers(peerUrl, data)
             } else{
                 if (self.onDataConnectionMessageReceived) {
+                    //console.log('Data message ' + from + ' ' + dataType + ' ' + JSON.stringify(data));
                     self.onDataConnectionMessageReceived(from, dataType, data);
                 }
             }
@@ -506,7 +511,7 @@ class MeshAdapter {
             // Flag changes known.
             this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
             // Notify changes.
-            this.notifyPeersChanged(currentPeers);
+            this.notifyPeersChanged(currentPeers); // Add timed delay to give remote peer time to
         }
 
         // Send changed peers to back to the peer.
@@ -546,6 +551,8 @@ class MeshAdapter {
         if (this.manager.peers.has(peerUrl)) {
             this.debugLog("mesh adapter - remove peer: " + peerUrl);
             const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [new PeerData(peerUrl, PeerStatus.UNAVAILABLE, new PeerPosition(0,0,0))]);
+            // Flag changes known.
+            this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
             this.notifyPeersChanged(currentPeers);
         }
     }
