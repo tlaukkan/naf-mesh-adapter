@@ -150,7 +150,7 @@ class MeshAdapter {
         if (this.connected) { throw Error('mesh adapter - connect: already connected.') } else { this.connected = true }
         if (this.signalingServerUrl == null) {
             this.signalingServerUrl = 'wss://tlaukkan-webrtc-signaling.herokuapp.com';
-            console.log('No server peerl URL nor signaling server URL set. Setting default siganling server URL: ' + this.signalingServerUrl)
+            this.debugLog('No server peerl URL nor signaling server URL set. Setting default siganling server URL: ' + this.signalingServerUrl)
         }
         this.openPrimarySignalingServerConnection();
     }
@@ -236,6 +236,14 @@ class MeshAdapter {
 
         this.removePeer(peerUrl)
 
+        if (connection) {
+            this.connections.delete(peerUrl)
+            this.signalingChannel.removeConnection(connection)
+            connection.close()
+            this.debugLog('rtc peer connection closed: ' + peerUrl);
+            this.debugLog('mesh adapter - close peer connection - removed connection ' + peerUrl)
+        }
+
         if (channel) {
             this.channels.delete(peerUrl)
             channel.close()
@@ -245,12 +253,6 @@ class MeshAdapter {
             }
         }
 
-        if (connection) {
-            this.connections.delete(peerUrl)
-            this.signalingChannel.removeConnection(connection)
-            connection.close()
-            this.debugLog('mesh adapter - close peer connection - removed connection ' + peerUrl)
-        }
     }
 
     async sendOffer(peer, selfPeerUrl) {
@@ -301,6 +303,7 @@ class MeshAdapter {
             return null;
         } else {
             connection = new this.RTCPeerConnectionImplementation(this.configuration)
+            this.debugLog('rtc peer connection opened: ' + peerUrl);
             this.connections.set(peerUrl, connection)
             connection.oniceconnectionstatechange = () => {
                 if (connection.iceConnectionState == 'disconnected' ||

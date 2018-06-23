@@ -9,7 +9,7 @@ const MeshAdapter = require('../../src/mesh-adapter').MeshAdapter;
 
 describe('mesh-adapter', function() {
     it('should connect and transmit message', function(done) {
-        this.timeout(5000);
+        this.timeout(6000);
         const adapter1 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
         adapter1.email = 'adapter1'
         adapter1.secret = uuidv4()
