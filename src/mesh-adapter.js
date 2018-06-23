@@ -61,6 +61,8 @@ class MeshAdapter {
         // The WebRTC options not in use currently.
         this.options = null
 
+        // Peer position in VR in relation which it is connected to other peers.
+        this.position = new PeerPosition(0,0,0);
         // Email for connecting to signaling server
         this.email = Date.now().toString();
         // Secret for connecting to signaling server
@@ -86,16 +88,13 @@ class MeshAdapter {
         // Map of peer URL and RTC Data Channels
         this.channels = new Map()
 
-        this.position = new PeerPosition(0,0,0);
-
-        //TODO Remove hack added for adapter test page
-        if (typeof (document) !== 'undefined') {
-            //this.email = document.title
-            //this.secret = document.title
-            //this.debugLogPrefix = document.title
-        }
-
+        // Peer manager containing peers and their connections. Peer manager uses peer primary URLs
         this.manager = new PeerManager();
+        // Map of peer URLs used in incoming connections and primary peer URLs.
+        // Remote primary peer URLs differ if remote peer primary signaling server is different from local peers.
+        // Adapter exposes only the connection peer URL as this is validated via signaling server. Primary peer URL is used in peer linking to avoid duplicate links.
+        this.connectionPeerUrlPrimaryPeerUrlMap = new Map()
+        this.primaryPeerUrlConnectionPeerUrlMap = new Map()
     }
 
     // ### INTERFACE FUNCTIONS ###
@@ -480,10 +479,21 @@ class MeshAdapter {
             const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [peer]);
             // Flag changes known.
             this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
+
+            // If this primary peer URL is already connected. Then warn and disconnect.
+            if (this.primaryPeerUrlConnectionPeerUrlMap.has(peer.url)) {
+                console.warn('Connection collision between peers using different signaling servers. connection peer URL: ' + peerUrl + " primary peer URL: " + peer.url);
+                this.closePeerConnection(peerUrl);
+            }
+
+            // Store the primary peer URL to be used in disconnect.
+            this.connectionPeerUrlPrimaryPeerUrlMap.set(peerUrl, peer.url)
+            this.primaryPeerUrlConnectionPeerUrlMap.set(peer.url, peerUrl)
+
             // Notify changes.
             this.notifyPeersChanged(currentPeers);
             if (this.onDataConnectionOpened) {
-                this.onDataConnectionOpened(peer.url);
+                this.onDataConnectionOpened(peerUrl);
             }
 
         }
@@ -505,7 +515,7 @@ class MeshAdapter {
         // Send offer to all peers which became available.
         actualChangedPeers.forEach(peer => {
             if (peer.status == PeerStatus.AVAILABLE) {
-                if (!this.connections.has(peer.url)) {
+                if (!this.connections.has(peer.url) && !this.primaryPeerUrlConnectionPeerUrlMap.has(peer.url)) {
                     this.sendOffer(new Peer(peer.url), this.selfPeerUrl).then().catch()
                 } else {
                     this.debugLog('mesh adapter - process changed peers: peer rtc peer connection exists: ' + peerUrl)
@@ -522,18 +532,29 @@ class MeshAdapter {
             return
         }
 
-        if (this.manager.peers.has(peerUrl)) {
-            this.debugLog("mesh adapter - remove peer: " + peerUrl);
-            const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [new PeerData(peerUrl, PeerStatus.UNAVAILABLE, new PeerPosition(0,0,0))]);
-            // Flag changes known.
-            this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
-            this.notifyPeersChanged(currentPeers);
+        if (this.connectionPeerUrlPrimaryPeerUrlMap.has(peerUrl)) {
+            const primaryPeerUrl = this.connectionPeerUrlPrimaryPeerUrlMap.get(peerUrl)
+            if (this.manager.peers.has(primaryPeerUrl)) {
+                this.debugLog("mesh adapter - remove peer: " + primaryPeerUrl);
+                const currentPeers = this.manager.peersChanged(this.selfPeerUrl, [new PeerData(primaryPeerUrl, PeerStatus.UNAVAILABLE, new PeerPosition(0, 0, 0))]);
+                // Flag changes known.
+                this.manager.findPeersChanged(this.selfPeerData.url, this.selfPeerData.position, 100, 100)
+                this.notifyPeersChanged(currentPeers);
+            }
+            this.connectionPeerUrlPrimaryPeerUrlMap.delete(peerUrl)
+            this.primaryPeerUrlConnectionPeerUrlMap.delete(primaryPeerUrl)
         }
     }
 
     notifyPeersChanged(peers) {
         const peerMap = new Map()
-        peers.forEach(peer => { peerMap.set(peer.url, peer.status === PeerStatus.AVAILABLE) });
+        peers.forEach(peer => {
+            if (this.primaryPeerUrlConnectionPeerUrlMap.has(peer.url)) {
+                peerMap.set(this.primaryPeerUrlConnectionPeerUrlMap.get(peer.url), peer.status === PeerStatus.AVAILABLE)
+            } else {
+                console.warn('mesh adapter - peerPrimaryUrlConnectionUrlMap did not contain removed peer. Notification skipped: ' + peer.url)
+            }
+        });
         this.debugLog("Peers changed: " + peerMap.size)
         this.onRoomOccupantsChanged(Array.from(peerMap).reduce((obj, [key, value]) => ( Object.assign(obj, {[key]: value}) ), {}));
     }
