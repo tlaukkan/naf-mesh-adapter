@@ -516,7 +516,7 @@ class MeshAdapter {
         actualChangedPeers.forEach(peer => {
             if (peer.status == PeerStatus.AVAILABLE) {
                 if (!this.connections.has(peer.url) && !this.primaryPeerUrlConnectionPeerUrlMap.has(peer.url)) {
-                    this.sendOffer(new Peer(peer.url), this.selfPeerUrl).then().catch()
+                    this.openPeerConnection(peer.url)
                 } else {
                     this.debugLog('mesh adapter - process changed peers: peer rtc peer connection exists: ' + peerUrl)
                 }

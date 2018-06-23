@@ -11,7 +11,7 @@ describe('mesh-adapter', function() {
     it('should connect and transmit message', function(done) {
         this.timeout(6000);
         const adapter1 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
-        adapter1.setSignalServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com');
+        adapter1.setSignalServerUrl('wss://webrtc-signaling-us.herokuapp.com');
         adapter1.email = 'adapter1';
         adapter1.secret = uuidv4();
 
@@ -38,7 +38,7 @@ describe('mesh-adapter', function() {
         )
 
         const adapter2 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
-        adapter2.setSignalServerUrl('wss://web-rtc-signaling-eu.herokuapp.com');
+        adapter2.setSignalServerUrl('wss://webrtc-signaling-eu.herokuapp.com');
 
         adapter2.email = 'adapter2';
         adapter2.secret = uuidv4();
@@ -85,7 +85,7 @@ describe('mesh-adapter', function() {
         })
 
         const adapter2 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
-        adapter2.setSignalServerUrl('wss://web-rtc-signaling-eu.herokuapp.com');
+        adapter2.setSignalServerUrl('wss://webrtc-signaling-eu.herokuapp.com');
         adapter2.email = 'adapter2'
         adapter2.secret = uuidv4()
 
@@ -104,7 +104,8 @@ describe('mesh-adapter', function() {
         })
 
         const adapter3 = new MeshAdapter(RTCPeerConnectionImplementation, WebSocketImplementation);
-        adapter3.setSignalServerUrl('wss://tlaukkan-webrtc-signaling.herokuapp.com');
+        adapter3.setSignalServerUrl('wss://web' +
+            'rtc-signaling-us.herokuapp.com');
         adapter3.email = 'adapter3'
         adapter3.secret = uuidv4()
 
