@@ -1,19 +1,20 @@
-const PeerStatus = require('./mesh-adapter-model').PeerStatus
-const PeerData = require('./mesh-adapter-model').PeerData
+const PeerStatus = require('./mesh-adapter-model').PeerStatus;
+const PeerData = require('./mesh-adapter-model').PeerData;
 
+/**
+ * Peer managed is used to manage peers and their connections.
+ * @type {PeerManager}
+ */
 exports.PeerManager = class {
 
+    /**
+     * Default constructor setting up peer and peer connections maps.
+     */
     constructor() {
-
         // Map of peer URL and peer Data
-        this.peers = new Map()
-
+        this.peers = new Map();
         // Map of peer URL and map of the known peer URLs and Peer
-        this.peerConnections = new Map()
-    }
-
-    peekPeersChanged() {
-
+        this.peerConnections = new Map();
     }
 
     /**
@@ -29,11 +30,11 @@ exports.PeerManager = class {
             }
             if (this.peers.has(peer.url)) {
                 if (peer.status === PeerStatus.UNAVAILABLE) {
-                    this.peers.set(peer.url, peer)
+                    this.peers.set(peer.url, peer);
                 }
             } else {
                 if (peer.status === PeerStatus.AVAILABLE) {
-                    this.peers.set(peer.url, peer)
+                    this.peers.set(peer.url, peer);
                 }
             }
         });
@@ -46,7 +47,7 @@ exports.PeerManager = class {
             }
         });
 
-        return peersWithUnavailablePeersIncluded
+        return peersWithUnavailablePeersIncluded;
     }
 
     /**
@@ -58,7 +59,7 @@ exports.PeerManager = class {
      * @returns {*}
      */
     findPeersChanged(peerUrl, position, range, applyChanges) {
-        const peersInRange = this.findPeersInRange(position, range)
+        const peersInRange = this.findPeersInRange(position, range);
 
         if (!this.peerConnections.has(peerUrl)) {
             if (applyChanges) {
@@ -74,7 +75,7 @@ exports.PeerManager = class {
 
         peersInRange.forEach(peer => {
            if (!currentPeers.has(peer.url)) {
-               peersAdded.push(peer)
+               peersAdded.push(peer);
            }
         });
 
@@ -92,17 +93,17 @@ exports.PeerManager = class {
 
         peersAdded.forEach(peer => {
             if (peerUrl !== peer.url) {
-                currentPeers.set(peer.url, peer)
+                currentPeers.set(peer.url, peer);
             }
         });
 
         peersRemoved.forEach(peer => {
             if (peerUrl !== peer.url) {
-                currentPeers.delete(peer.url)
+                currentPeers.delete(peer.url);
             }
         });
 
-        return peersAdded.concat(peersRemoved)
+        return peersAdded.concat(peersRemoved);
     }
 
     /**
@@ -117,10 +118,16 @@ exports.PeerManager = class {
         const savedPeers = new Map(this.peers);
         this.peersChanged(peerUrl, changedPeers);
         const verifiedChangedPeers = this.findPeersChanged(peerUrl, position, range, false);
-        this.peers = savedPeers
+        this.peers = savedPeers;
         return verifiedChangedPeers;
     }
 
+    /**
+     * Find peers in given range.
+     * @param position the position
+     * @param range the range
+     * @returns {Map<any, any>} peer URL, peer map
+     */
     findPeersInRange(position, range) {
         const peersInRange = new Map();
         const rangeSquared = range * range;
@@ -137,4 +144,4 @@ exports.PeerManager = class {
         return peersInRange
     }
 
-}
+};

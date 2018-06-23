@@ -109,7 +109,7 @@ class MeshAdapter {
         const serverPeelUrlArray = this.serverPeerUrls.split(',')
         if (!this.signalingServerUrl && serverPeelUrlArray.length > 0) {
             this.signalingServerUrl = new Peer(serverPeelUrlArray[0]).signalingServerUrl;
-            console.log('No signaling server URL set. Setting signaling server URL from first server peer URL: ' + this.signalingServerUrl)
+            this.debugLog('No signaling server URL set. Setting signaling server URL from first server peer URL: ' + this.signalingServerUrl)
         }
     }
 
@@ -531,7 +531,7 @@ class MeshAdapter {
     notifyPeersChanged(peers) {
         const peerMap = new Map()
         peers.forEach(peer => { peerMap.set(peer.url, peer.status === PeerStatus.AVAILABLE) });
-        console.log("Peers changed: " + peerMap.size)
+        this.debugLog("Peers changed: " + peerMap.size)
         this.onRoomOccupantsChanged(Array.from(peerMap).reduce((obj, [key, value]) => ( Object.assign(obj, {[key]: value}) ), {}));
     }
 
