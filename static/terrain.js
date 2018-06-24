@@ -40,18 +40,18 @@ AFRAME.registerComponent('terrain', {
             return new THREE.Vector3(i + j * dx, j * dy, 0)
         }
 
-        var addFace = (i, j, v, primary) => {
+        var addFace = (i, j, step, v, primary) => {
             if (primary) {
                 this.geometry.vertices.push(
                     getVector3(i, j),
-                    getVector3(i + 1, j),
-                    getVector3(i, j + 1)
+                    getVector3(i + step, j),
+                    getVector3(i, j + step)
                 );
             } else {
                 this.geometry.vertices.push(
-                    getVector3(i, j + 1),
-                    getVector3(i + 1, j),
-                    getVector3(i + 1, j + 1)
+                    getVector3(i, j + step),
+                    getVector3(i + step, j),
+                    getVector3(i + step, j + step)
                 );
             }
 
@@ -62,15 +62,17 @@ AFRAME.registerComponent('terrain', {
             this.geometry.faces.push(face);
         }
 
+        const radius = 10
+        const step = 0.5
         var v = 0
-        for (var i = 0; i < 9; i++) {
-            for (var j = 0; j < 9; j++) {
-                if (i + j < 9) {
-                    addFace(i, j, v, true)
+        for (var i = -radius; i < radius; i+= step) {
+            for (var j = -radius; j < radius; j+= step) {
+                if (Math.abs(i + j) < radius) {
+                    addFace(i, j, step, v, true)
                     v += 3;
                 }
-                if (i + j < 8) {
-                    addFace(i, j, v, false)
+                if (Math.abs(i + j + step) < radius) {
+                    addFace(i, j, step, v, false)
                     v += 3;
                 }
             }
