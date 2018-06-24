@@ -46,7 +46,11 @@ AFRAME.registerComponent('terrain', {
         }
 
         let getVector3 = (i, j) => {
-            return new THREE.Vector3(i + j * dx, j * dy, getHeight(i,j))
+            return new THREE.Vector3(i + j * dx, j * dy, getHeight(i + j * dx,j * dy))
+        };
+
+        let getCenter = (i, j) => {
+            return new THREE.Vector3(i + j * dx + dx * step, j * dy + dy * step / 2, getHeight(i,j))
         };
 
         let addFace = (i, j, step, v, primary) => {
@@ -72,13 +76,13 @@ AFRAME.registerComponent('terrain', {
         };
 
         let v = 0;
-        for (let i = -radius; i < radius; i+= step) {
-            for (let j = -radius; j < radius; j+= step) {
-                if (Math.abs(i + j) < radius) {
+        for (let i = -radius * 1.2; i < radius * 1.2; i+= step) {
+            for (let j = -radius * 1.4; j < radius * 1.4; j+= step) {
+                if (getCenter(i, j).length() < radius) {
                     addFace(i, j, step, v, true);
                     v += 3;
                 }
-                if (Math.abs(i + j + step) < radius) {
+                if (getCenter(i, j).length() < radius) {
                     addFace(i, j, step, v, false);
                     v += 3;
                 }
@@ -89,7 +93,6 @@ AFRAME.registerComponent('terrain', {
         this.geometry.computeFaceNormals();
         this.geometry.computeVertexNormals();
 
-        //this.material = new THREE.MeshLambertMaterial({ color: 0x000000, shading: THREE.FlatShading, wireframe: true, transparent: true });
         this.material = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: THREE.VertexColors });
         this.mesh = new THREE.Mesh(this.geometry, this.material);
         el.setObject3D('mesh', this.mesh);
@@ -97,15 +100,6 @@ AFRAME.registerComponent('terrain', {
         this.wireMaterial = new THREE.MeshLambertMaterial({ color: 0xdddddd, wireframe: true, vertexColors: THREE.VertexColors });
         this.wireMesh = new THREE.Mesh(this.geometry, this.wireMaterial);
         el.setObject3D('wire', this.wireMesh);
-
-        /*
-        var materials = [
-            new THREE.MeshLambertMaterial({ color: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors }),
-            new THREE.MeshBasicMaterial({ color: 0x000000, shading: THREE.FlatShading, wireframe: true, transparent: true })
-        ];
-        var group1 = THREE.SceneUtils.createMultiMaterialObject(this.geometry, materials);
-        group1.position.x = -400;
-        group1.rotation.x = -1.87;*/
 
     }
 });
