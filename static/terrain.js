@@ -37,23 +37,26 @@ AFRAME.registerComponent('terrain', {
         const dy = Math.sin(Math.PI / 3);
 
         const radius = 20.0;
+        const x = 20;
+        const y = 0;
+        const z = 20;
         const step = 1;
 
         const radiusSquared = radius * radius;
 
-        let getHeight = (x, y) => {
-            return 2 * Math.sin(Math.PI * (x*x + y*y) / radiusSquared);
+        let getHeight = (i, j) => {
+            return 2 * Math.sin(Math.PI * (i*i + j*j) / radiusSquared);
         }
 
         let getVector3 = (i, j) => {
-            return new THREE.Vector3(i + j * dx, j * dy, getHeight(i + j * dx,j * dy))
+            return new THREE.Vector3(x + i + j * dx, z + j * dy, y + getHeight(x + i + j * dx,z + j * dy))
         };
 
         let getCenter = (i, j, step, primary) => {
             if (primary) {
-                return new THREE.Vector3(i + j * dx + step / 2, j * dy + step * dy / 2, 0)
+                return new THREE.Vector3(i + j * dx + step / 2, j * dy + dy * step * 0.5, 0)
             } else {
-                return new THREE.Vector3(i + j * dx + step, j * dy + step * dy / 2, 0)
+                return new THREE.Vector3(i + j * dx + step, j * dy + dy * step * 0.5, 0)
             }
         };
 
