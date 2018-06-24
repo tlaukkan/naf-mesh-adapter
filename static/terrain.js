@@ -37,9 +37,9 @@ AFRAME.registerComponent('terrain', {
         const dy = Math.sin(Math.PI / 3);
 
         const radius = 20.0;
-        const x = 20;
-        const y = 0;
-        const z = 20;
+        const x = 0;
+        const y = -5;
+        const z = 0;
         const step = 1;
 
         const radiusSquared = radius * radius;
@@ -49,14 +49,14 @@ AFRAME.registerComponent('terrain', {
         }
 
         let getVector3 = (i, j) => {
-            return new THREE.Vector3(x + i + j * dx, z + j * dy, y + getHeight(x + i + j * dx,z + j * dy))
+            return new THREE.Vector3(x + i + j * dx, y + getHeight(x + i + j * dx,z + j * dy), z + j * dy)
         };
 
         let getCenter = (i, j, step, primary) => {
             if (primary) {
-                return new THREE.Vector3(i + j * dx + step / 2, j * dy + dy * step * 0.5, 0)
+                return new THREE.Vector3(i + j * dx + step / 2, 0, j * dy + dy * step * 0.5)
             } else {
-                return new THREE.Vector3(i + j * dx + step, j * dy + dy * step * 0.5, 0)
+                return new THREE.Vector3(i + j * dx + step, 0, j * dy + dy * step * 0.5)
             }
         };
 
@@ -64,14 +64,14 @@ AFRAME.registerComponent('terrain', {
             if (primary) {
                 this.geometry.vertices.push(
                     getVector3(i, j),
-                    getVector3(i + step, j),
-                    getVector3(i, j + step)
+                    getVector3(i, j + step),
+                    getVector3(i + step, j)
                 );
             } else {
                 this.geometry.vertices.push(
                     getVector3(i, j + step),
-                    getVector3(i + step, j),
-                    getVector3(i + step, j + step)
+                    getVector3(i + step, j + step),
+                    getVector3(i + step, j)
                 );
             }
 
@@ -116,7 +116,7 @@ AFRAME.registerComponent('terrain', {
 AFRAME.registerPrimitive('a-terrain', {
     defaultComponents: {
         terrain: {},
-        rotation: {x: -90, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0}
     },
     mappings: {
         width: 'terrain.width',
