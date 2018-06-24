@@ -49,8 +49,12 @@ AFRAME.registerComponent('terrain', {
             return new THREE.Vector3(i + j * dx, j * dy, getHeight(i + j * dx,j * dy))
         };
 
-        let getCenter = (i, j) => {
-            return new THREE.Vector3(i + j * dx + dx * step, j * dy + dy * step / 2, getHeight(i,j))
+        let getCenter = (i, j, primary) => {
+            if (primary) {
+                return new THREE.Vector3(i + j * dx + step / 2, j * dy + step * dy / 2, 0)
+            } else {
+                return new THREE.Vector3(i + j * dx + step, j * dy + step * dy / 2, 0)
+            }
         };
 
         let addFace = (i, j, step, v, primary) => {
@@ -78,11 +82,11 @@ AFRAME.registerComponent('terrain', {
         let v = 0;
         for (let i = -radius * 1.2; i < radius * 1.2; i+= step) {
             for (let j = -radius * 1.4; j < radius * 1.4; j+= step) {
-                if (getCenter(i, j).length() < radius) {
+                if (getCenter(i, j, true).length() <= radius) {
                     addFace(i, j, step, v, true);
                     v += 3;
                 }
-                if (getCenter(i, j).length() < radius) {
+                if (getCenter(i, j, false).length() <= radius) {
                     addFace(i, j, step, v, false);
                     v += 3;
                 }
