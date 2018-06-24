@@ -49,7 +49,7 @@ AFRAME.registerComponent('terrain', {
             return new THREE.Vector3(i + j * dx, j * dy, getHeight(i + j * dx,j * dy))
         };
 
-        let getCenter = (i, j, primary) => {
+        let getCenter = (i, j, step, primary) => {
             if (primary) {
                 return new THREE.Vector3(i + j * dx + step / 2, j * dy + step * dy / 2, 0)
             } else {
@@ -57,7 +57,7 @@ AFRAME.registerComponent('terrain', {
             }
         };
 
-        let addFace = (i, j, step, v, primary) => {
+        let addFace = (v, i, j, step, primary) => {
             if (primary) {
                 this.geometry.vertices.push(
                     getVector3(i, j),
@@ -82,12 +82,12 @@ AFRAME.registerComponent('terrain', {
         let v = 0;
         for (let i = -radius * 1.2; i < radius * 1.2; i+= step) {
             for (let j = -radius * 1.4; j < radius * 1.4; j+= step) {
-                if (getCenter(i, j, true).length() <= radius) {
-                    addFace(i, j, step, v, true);
+                if (getCenter(i, j, step, true).length() <= radius) {
+                    addFace(v, i, j, step, true);
                     v += 3;
                 }
-                if (getCenter(i, j, false).length() <= radius) {
-                    addFace(i, j, step, v, false);
+                if (getCenter(i, j, step, false).length() <= radius) {
+                    addFace(v, i, j, step, false);
                     v += 3;
                 }
             }
